@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Italiano">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1a2e">
+<title>🇮🇹 Il Mio Italiano</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<style>
+  :root { --bg:#1a1a2e; --card:#16213e; --accent:#e94560; --gold:#ffd460; --green:#4e9f3d; --text:#eee; --dim:#8b9bb4; }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:-apple-system,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; max-width:520px; margin:0 auto; }
+  header { padding:18px 16px 10px; display:flex; justify-content:space-between; align-items:center; }
+  h1 { font-size:1.25rem; }
+  .progress-pill { background:var(--card); border-radius:20px; padding:6px 14px; font-size:.85rem; color:var(--gold); font-weight:600; }
+  nav { display:flex; gap:8px; padding:0 16px 12px; }
+  nav button { flex:1; padding:10px 0; border:none; border-radius:12px; background:var(--card); color:var(--dim); font-size:.95rem; font-weight:600; cursor:pointer; transition:all .2s; }
+  nav button.active { background:var(--accent); color:#fff; }
+  main { flex:1; padding:8px 16px 100px; }
+  .hidden { display:none !important; }
+
+  /* Flashcards */
+  #deck-info { text-align:center; color:var(--dim); font-size:.85rem; margin-bottom:10px; }
+  .flashcard { perspective:1000px; height:300px; cursor:pointer; }
+  .flashcard-inner { position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; }
+  .flashcard.flipped .flashcard-inner { transform:rotateY(180deg); }
+  .face { position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden; background:var(--card); border-radius:24px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; box-shadow:0 8px 24px rgba(0,0,0,.4); border:1px solid #ffffff14; }
+  .face.back { transform:rotateY(180deg); }
+  .word { font-size:2rem; font-weight:700; text-align:center; }
+  .translation { font-size:1.35rem; color:var(--gold); text-align:center; margin-top:12px; }
+  .cat-tag { position:absolute; top:16px; left:16px; font-size:.7rem; color:var(--dim); background:#ffffff10; padding:4px 10px; border-radius:12px; }
+  .hint { position:absolute; bottom:16px; font-size:.75rem; color:var(--dim); }
+  .flip-actions { display:flex; gap:12px; margin-top:18px; }
+  .flip-actions button { flex:1; padding:16px 0; border:none; border-radius:16px; font-size:1rem; font-weight:700; cursor:pointer; color:#fff; }
+  #know-btn { background:var(--green); } #dont-btn { background:#c0392b; }
+  .flip-actions button:active { transform:scale(.96); }
+
+  /* Quiz */
+  .quiz-card { background:var(--card); border-radius:24px; padding:28px 22px; box-shadow:0 8px 24px rgba(0,0,0,.4); }
+  .quiz-q { font-size:1.4rem; font-weight:700; text-align:center; margin-bottom:6px; }
+  .quiz-sub { text-align:center; color:var(--dim); font-size:.85rem; margin-bottom:20px; }
+  .quiz-opts { display:flex; flex-direction:column; gap:10px; }
+  .quiz-opts button { padding:15px; border:2px solid #ffffff1a; border-radius:14px; background:#ffffff08; color:var(--text); font-size:1.05rem; cursor:pointer; text-align:left; transition:all .15s; }
+  .quiz-opts button.correct { background:var(--green); border-color:var(--green); }
+  .quiz-opts button.wrong { background:#c0392b; border-color:#c0392b; }
+  #quiz-score { text-align:center; color:var(--gold); font-weight:600; margin-bottom:14px; }
+
+  /* Dictionary */
+  #search { width:100%; padding:14px 18px; border-radius:14px; border:1px solid #ffffff22; background:var(--card); color:var(--text); font-size:1rem; margin-bottom:10px; }
+  #search:focus { outline:none; border-color:var(--accent); }
+  .tier-filter { display:flex; gap:6px; margin-bottom:12px; overflow-x:auto; padding-bottom:4px; }
+  .tier-filter button { padding:7px 13px; border-radius:16px; border:1px solid #ffffff22; background:transparent; color:var(--dim); font-size:.8rem; cursor:pointer; white-space:nowrap; }
+  .tier-filter button.active { background:var(--gold); color:#222; border-color:var(--gold); font-weight:700; }
+  .dict-row { display:flex; justify-content:space-between; gap:14px; padding:12px 4px; border-bottom:1px solid #ffffff0d; cursor:pointer; }
+  .dict-row .it { font-weight:600; }
+  .dict-row .en { color:var(--dim); text-align:right; font-size:.9rem; }
+  .dict-row .star { color:#555; margin-right:8px; font-size:1rem; }
+  .dict-row .star.on { color:var(--gold); }
+  .tier-badge { font-size:.65rem; padding:2px 7px; border-radius:8px; margin-left:8px; vertical-align:middle; }
+  .t1{background:#2d6a4f}.t2{background:#6a994e}.t3{background:#bc6c25}.t4{background:#9d2c4a}.t5{background:#5a4a8a}
+  #dict-count { color:var(--dim); font-size:.8rem; margin:8px 0; }
+
+  /* Verbs */
+  .verb-tables details { background:var(--card); border-radius:14px; margin-bottom:10px; overflow:hidden; }
+  .verb-tables summary { padding:14px 16px; font-weight:700; cursor:pointer; list-style:none; }
+  .verb-tables summary::-webkit-details-marker { display:none; }
+  .verb-tables summary::after { content:"▾"; float:right; color:var(--dim); }
+  .verb-tables details[open] summary::after { content:"▴"; }
+  .conj-table { width:100%; border-collapse:collapse; font-size:.9rem; }
+  .conj-table td { padding:8px 16px; border-top:1px solid #ffffff0d; }
+  .conj-table td:last-child { text-align:right; font-weight:700; color:var(--gold); }
+  .drill-card { background:var(--card); border-radius:24px; padding:28px 22px; box-shadow:0 8px 24px rgba(0,0,0,.4); margin-top:6px; }
+  .drill-q { font-size:1.5rem; font-weight:700; text-align:center; margin-bottom:4px; }
+  .drill-sub { text-align:center; color:var(--dim); font-size:.85rem; margin-bottom:20px; }
+  .section-label { font-size:.75rem; text-transform:uppercase; letter-spacing:1px; color:var(--dim); margin:14px 0 8px; }
+
+  .rom { color:var(--gold); font-size:1.05rem; margin-top:10px; letter-spacing:.5px; }
+  .rom-small { color:var(--dim); font-size:.78rem; }
+  .speak { position:absolute; bottom:14px; right:14px; background:#ffffff14; border:none; border-radius:50%; width:44px; height:44px; font-size:1.15rem; cursor:pointer; }
+  .speak:active { transform:scale(.9); }
+  .dict-speak { cursor:pointer; margin-left:4px; font-size:.8rem; opacity:.8; }
+
+  /* Home screen */
+  .home-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:8px; }
+  .home-card { background:var(--card); border-radius:22px; padding:30px 14px 24px; text-align:center; cursor:pointer; border:1px solid #ffffff14; box-shadow:0 6px 18px rgba(0,0,0,.35); transition:transform .15s, border-color .15s; }
+  .home-card:active { transform:scale(.94); }
+  .home-card .big { font-size:3rem; line-height:1; }
+  .home-card .label { font-weight:700; font-size:1.05rem; margin-top:12px; }
+  .home-card .desc { color:var(--dim); font-size:.75rem; margin-top:5px; }
+  #home-btn { background:var(--card); border:none; border-radius:12px; padding:8px 12px; font-size:1.15rem; cursor:pointer; margin-right:8px; }
+  #home-btn:active { transform:scale(.92); }
+
+  /* Progress dashboard */
+  .stats-summary { background:var(--card); border-radius:24px; padding:24px 20px; text-align:center; box-shadow:0 8px 24px rgba(0,0,0,.4); border:1px solid #ffffff14; }
+  .stats-big { font-size:2.4rem; font-weight:800; }
+  .stats-sub { color:var(--dim); font-size:.85rem; margin-top:2px; margin-bottom:16px; }
+  .progress-track { width:100%; height:8px; background:#ffffff12; border-radius:6px; overflow:hidden; }
+  .progress-track.big { height:12px; }
+  .progress-fill { height:100%; background:linear-gradient(90deg,var(--green),var(--gold)); border-radius:6px; transition:width .4s ease; }
+  .stats-mini-row { display:flex; justify-content:space-between; margin-top:18px; gap:8px; }
+  .stats-mini { flex:1; }
+  .stats-mini-num { font-size:1.15rem; font-weight:700; color:var(--gold); }
+  .stats-mini-label { color:var(--dim); font-size:.68rem; margin-top:2px; }
+  .stat-row { margin-bottom:12px; }
+  .stat-row-top { display:flex; justify-content:space-between; font-size:.85rem; margin-bottom:5px; }
+  .stat-row-top .name { font-weight:600; }
+  .stat-row-top .count { color:var(--dim); }
+  #stats-categories { padding:4px 16px 16px; }
+
+  /* Basics */
+  .basic-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .basic-card { background:var(--card); border-radius:16px; padding:14px 6px; text-align:center; cursor:pointer; border:1px solid #ffffff12; }
+  .basic-card:active { transform:scale(.93); }
+  .basic-card .ch { font-size:1.6rem; font-weight:800; }
+  .basic-card .sm { color:var(--dim); font-size:.68rem; margin-top:4px; }
+  .num-row { display:flex; align-items:center; gap:12px; background:var(--card); border-radius:14px; padding:11px 14px; margin-bottom:8px; }
+  .num-row .dig { font-size:1.15rem; font-weight:800; color:var(--gold); min-width:74px; }
+  .num-row .wd { font-weight:600; }
+  .num-row .rm { color:var(--dim); font-size:.75rem; }
+  .num-row .spk { margin-left:auto; cursor:pointer; }
+
+  /* Chat */
+  #view-chat { display:flex; flex-direction:column; height:calc(100dvh - 178px); }
+  .chip-row { display:flex; gap:6px; overflow-x:auto; padding:2px 0 8px; }
+  .chip-row button { padding:6px 12px; border-radius:14px; border:1px solid #ffffff22; background:transparent; color:var(--dim); font-size:.78rem; white-space:nowrap; cursor:pointer; }
+  .chip-row button:active { background:var(--accent); color:#fff; }
+  #chat-box { flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; padding:4px 2px; }
+  .msg { max-width:84%; padding:10px 14px; border-radius:18px; margin-bottom:4px; font-size:.97rem; line-height:1.4; cursor:pointer; border:1px solid #ffffff12; }
+  .msg.bot { background:var(--card); border-bottom-left-radius:4px; align-self:flex-start; }
+  .msg.user { background:var(--accent); color:#fff; border-bottom-right-radius:4px; align-self:flex-end; }
+  .typing { color:var(--dim); font-style:italic; font-size:.85rem; padding:6px 10px; }
+  .trans-box { background:#0f3460; border-radius:14px; padding:9px 12px; margin:2px 0 10px; font-size:.8rem; line-height:1.9; max-width:94%; }
+  .trans-box .tw { cursor:pointer; border-bottom:1px dotted #ffffff44; }
+  .trans-box .tw:hover b { color:var(--gold); }
+  .trans-box .m { color:var(--dim); font-size:.73rem; margin-right:6px; }
+  .chat-input-row { display:flex; gap:8px; margin-top:8px; }
+  #chat-input { flex:1; padding:13px 16px; border-radius:22px; border:1px solid #ffffff22; background:var(--card); color:var(--text); font-size:1rem; }
+  #chat-input:focus { outline:none; border-color:var(--accent); }
+  #chat-send { background:var(--accent); border:none; border-radius:22px; padding:0 20px; color:#fff; font-size:1.15rem; cursor:pointer; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🇮🇹 Il Mio Italiano</h1>
+  <div style="display:flex;align-items:center"><button id="home-btn">🏠</button><div class="progress-pill" id="stats-pill" style="cursor:pointer;">⭐ <span id="known-count">0</span></div></div>
+</header>
+<nav>
+  <button id="tab-flash" class="active">🃏 Flashcards</button>
+  <button id="tab-quiz">🧠 Quiz</button>
+  <button id="tab-dict">📖 Dictionary</button>
+  <button id="tab-verbs">🔀 Verbs</button>
+  <button id="tab-basics">🅰️ Basics</button>
+  <button id="tab-chat">💬 Chat</button>
+</nav>
+<main>
+  <!-- FLASHCARDS -->
+  <section id="view-home">
+    <div style="text-align:center;color:var(--dim);font-size:.85rem;margin:4px 0 16px">Ciao! 👋 Tap a mode to start learning</div>
+    <div class="home-grid">
+      <div class="home-card" data-go="flash"><div class="big">🃏</div><div class="label">Flashcards</div><div class="desc">Flip & learn with audio</div></div>
+      <div class="home-card" data-go="quiz"><div class="big">🧠</div><div class="label">Quiz</div><div class="desc">Multiple-choice test</div></div>
+      <div class="home-card" data-go="dict"><div class="big">📖</div><div class="label">Dictionary</div><div class="desc">Search all 508 words</div></div>
+      <div class="home-card" data-go="verbs"><div class="big">🔀</div><div class="label">Verbs</div><div class="desc">Conjugation drill + tables</div></div>
+      <div class="home-card" data-go="basics"><div class="big">🅰️</div><div class="label">Basics</div><div class="desc">Alphabet · Numeri · Animali</div></div>
+      <div class="home-card" data-go="chat"><div class="big">💬</div><div class="label">Chat</div><div class="desc">Text with Sofia + slang</div></div>
+      <div class="home-card" data-go="stats" style="grid-column:1 / -1;"><div class="big">📊</div><div class="label">Progress</div><div class="desc">See what you know so far</div></div>
+    </div>
+  </section>
+
+  <!-- PROGRESS DASHBOARD -->
+  <section id="view-stats" class="hidden">
+    <div class="stats-summary">
+      <div class="stats-big"><span id="stats-known">0</span> / <span id="stats-total">0</span></div>
+      <div class="stats-sub">words known</div>
+      <div class="progress-track big"><div class="progress-fill" id="stats-overall-fill" style="width:0%"></div></div>
+      <div class="stats-mini-row">
+        <div class="stats-mini"><div class="stats-mini-num" id="stats-starred">0</div><div class="stats-mini-label">⭐ starred</div></div>
+        <div class="stats-mini"><div class="stats-mini-num" id="stats-mastered">0</div><div class="stats-mini-label">📚 categories mastered</div></div>
+        <div class="stats-mini"><div class="stats-mini-num" id="stats-pct">0%</div><div class="stats-mini-label">overall</div></div>
+      </div>
+    </div>
+
+    <div class="section-label">By tier</div>
+    <div id="stats-tiers"></div>
+
+    <div class="verb-tables">
+      <details>
+        <summary>By category (<span id="stats-cat-count">0</span>)</summary>
+        <div id="stats-categories"></div>
+      </details>
+    </div>
+  </section>
+
+  <section id="view-flash" class="hidden">
+    <div class="tier-filter" id="fc-tier"></div>
+    <div id="deck-info"></div>
+    <div class="flashcard" id="flashcard">
+      <div class="flashcard-inner">
+        <div class="face front"><span class="cat-tag" id="fc-cat"></span><div class="word" id="fc-front"></div><div class="rom" id="fc-rom"></div><button class="speak" id="fc-speak">🔊</button><div class="hint">tap to flip 👆</div></div>
+        <div class="face back"><span class="cat-tag" id="fc-cat2"></span><div class="word" id="fc-word"></div><div class="rom" id="fc-rom2" style="font-size:.95rem;color:var(--dim)"></div><div class="translation" id="fc-back"></div></div>
+      </div>
+    </div>
+    <div class="flip-actions">
+      <button id="dont-btn">✗ Still learning</button>
+      <button id="know-btn">✓ I know this</button>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="view-quiz" class="hidden">
+    <div class="tier-filter" id="quiz-tier"></div>
+    <div id="quiz-score"></div>
+    <div class="quiz-card">
+      <div class="quiz-q" id="quiz-q"></div>
+      <div class="quiz-sub">choose the correct translation</div>
+      <div class="quiz-sub" id="quiz-rom" style="color:var(--gold);margin-top:-14px;margin-bottom:16px"></div>
+      <div class="quiz-opts" id="quiz-opts"></div>
+    </div>
+  </section>
+
+  <!-- DICTIONARY -->
+  <section id="view-dict" class="hidden">
+    <input id="search" placeholder="🔍 Search Italian or English…">
+    <div class="tier-filter" id="dict-tier"></div>
+    <div id="dict-count"></div>
+    <div id="dict-list"></div>
+  </section>
+
+  <!-- VERBS -->
+  <section id="view-chat" class="hidden">
+    <div style="text-align:center;color:var(--dim);font-size:.78rem;margin-bottom:6px">💬 Sofia ti scrive da Roma — tocca un messaggio per la traduzione parola per parola!</div>
+    <div class="chip-row" id="chat-chips"></div>
+    <div id="chat-box"></div>
+    <div class="chat-input-row">
+      <input id="chat-input" placeholder="Scrivi in italiano… 🇮🇹" autocomplete="off">
+      <button id="chat-send">➤</button>
+    </div>
+  </section>
+
+  <section id="view-basics" class="hidden">
+    <div class="tier-filter" id="basic-tier"></div>
+    <div id="basic-alphabet">
+      <div style="text-align:center;color:var(--dim);font-size:.8rem;margin-bottom:10px">Tap a letter to hear its Italian name 🔊</div>
+      <div class="basic-grid" id="alpha-grid"></div>
+    </div>
+    <div id="basic-numbers" class="hidden">
+      <div style="text-align:center;color:var(--dim);font-size:.8rem;margin-bottom:10px">Tap 🔊 to hear each number — notice the "ten-one" pattern (undici = un+dieci)!</div>
+      <div id="num-list"></div>
+    </div>
+    <div id="basic-animals" class="hidden">
+      <div style="text-align:center;color:var(--dim);font-size:.8rem;margin-bottom:10px">Gli animali 🐾 — tap to hear them</div>
+      <div id="anim-list"></div>
+    </div>
+  </section>
+
+  <section id="view-verbs" class="hidden">
+    <div class="section-label">Conjugation drill</div>
+    <div class="tier-filter" id="verb-tier"></div>
+    <div id="verb-score" style="text-align:center;color:var(--gold);font-weight:600;margin-bottom:12px;"></div>
+    <div class="drill-card">
+      <div class="drill-q" id="drill-q"></div>
+      <div class="drill-sub" id="drill-sub"></div>
+      <div class="quiz-opts" id="drill-opts"></div>
+    </div>
+    <div class="section-label">Reference tables</div>
+    <div class="verb-tables" id="verb-tables"></div>
+  </section>
+</main>
+
+<script>
+const WORDS = [["Ciao", "Hi / Bye", 1, "Greetings &amp; Politeness", "CHAO"], ["Buongiorno", "Good morning", 1, "Greetings &amp; Politeness", "Bwon-JOR-no"], ["Buonasera", "Good evening", 1, "Greetings &amp; Politeness", "Bwo-na-ZE-ra"], ["Buonanotte", "Good night", 1, "Greetings &amp; Politeness", "Bwo-na-NOT-te"], ["Salve", "Hello (formal)", 1, "Greetings &amp; Politeness", "SAL-ve"], ["Arrivederci", "Goodbye", 1, "Greetings &amp; Politeness", "Ar-ri-ve-DER-chi"], ["Per favore", "Please", 1, "Greetings &amp; Politeness", "PER fa-VO-re"], ["Grazie", "Thank you", 1, "Greetings &amp; Politeness", "GRA-dzye"], ["Prego", "You&#x27;re welcome", 1, "Greetings &amp; Politeness", "PRE-go"], ["Scusi", "Excuse me (formal)", 1, "Greetings &amp; Politeness", "SKU-zi"], ["Scusa", "Sorry (informal)", 1, "Greetings &amp; Politeness", "SKU-za"], ["Mi dispiace", "I&#x27;m sorry", 1, "Greetings &amp; Politeness", "MI di-SPYA-che"], ["Va bene", "Okay", 1, "Greetings &amp; Politeness", "VA BE-ne"], ["Sì / No", "Yes / No", 1, "Greetings &amp; Politeness", "SÌ / NO"], ["Benvenuto!", "Welcome!", 1, "Greetings &amp; Politeness", "Ben-ve-nu-TO!"], ["essere v", "to be", 1, "Core Verbs (Essere &amp; Avere first — everything else hangs off these)", "es-SE-re v"], ["avere v", "to have", 1, "Core Verbs (Essere &amp; Avere first — everything else hangs off these)", "a-VE-re v"], ["fare v", "to do / make", 1, "Core Verbs (Essere &amp; Avere first — everything else hangs off these)", "FA-re v"], ["andare v", "to go", 1, "Core Verbs (Essere &amp; Avere first — everything else hangs off these)", "an-DA-re v"], ["venire v", "to come", 1, "Core Verbs (Essere &amp; Avere first — everything else hangs off these)", "ve-NI-re v"], ["volere v", "to want", 1, "Core Verbs (Essere &amp; Avere first — everything else hangs off these)", "vo-LE-re v"], ["potere v", "can / to be able to", 1, "Core Verbs (Essere &amp; Avere first — everything else hangs off these)", "po-TE-re v"], ["dovere v", "must / to have to", 1, "Core Verbs (Essere &amp; Avere first — everything else hangs off these)", "do-VE-re v"], ["dire v", "to say / tell", 1, "Core Verbs (Essere &amp; Avere first — everything else hangs off these)", "DI-re v"], ["vedere v", "to see", 1, "Core Verbs (Essere &amp; Avere first — everything else hangs off these)", "ve-DE-re v"], ["parlare v", "to speak", 1, "Core Verbs (Essere &amp; Avere first — everything else hangs off these)", "par-LA-re v"], ["mangiare v", "to eat", 1, "Core Verbs (Essere &amp; Avere first — everything else hangs off these)", "man-JA-re v"], ["bere v", "to drink", 1, "Core Verbs (Essere &amp; Avere first — everything else hangs off these)", "BE-re v"], ["dormire v", "to sleep", 1, "Core Verbs (Essere &amp; Avere first — everything else hangs off these)", "dor-MI-re v"], ["capire v", "to understand", 1, "Core Verbs (Essere &amp; Avere first — everything else hangs off these)", "ka-PI-re v"], ["sapere v", "to know (facts)", 1, "Core Verbs (Essere &amp; Avere first — everything else hangs off these)", "sa-PE-re v"], ["conoscere v", "to know (people/places)", 1, "Core Verbs (Essere &amp; Avere first — everything else hangs off these)", "ko-no-SHE-re v"], ["pensare v", "to think", 1, "Core Verbs (Essere &amp; Avere first — everything else hangs off these)", "pen-SA-re v"], ["lavorare v", "to work", 1, "Core Verbs (Essere &amp; Avere first — everything else hangs off these)", "la-vo-RA-re v"], ["stare v", "to stay / to be (health)", 1, "Core Verbs (Essere &amp; Avere first — everything else hangs off these)", "STA-re v"], ["dare v", "to give", 1, "Core Verbs (Essere &amp; Avere first — everything else hangs off these)", "DA-re v"], ["il / lo / la", "the (m / m / f)", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "IL / LO / LA"], ["i / gli / le", "the (plural m / m / f)", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "I / ly / LE"], ["un / una", "a / an", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "UN / U-na"], ["di", "of / from", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "DI"], ["a", "to / at", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "A"], ["in", "in", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "IN"], ["che", "that / which / what", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "KE"], ["e", "and", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "E"], ["o", "or", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "O"], ["ma", "but", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "MA"], ["non", "not", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "NON"], ["questo / questa", "this", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "KWE-sto / KWE-sta"], ["quello / quella", "that", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "KWEL-lo / KWEL-la"], ["qui / qua", "here", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "kwi / KWA"], ["lì / là", "there", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "LÌ / LÀ"], ["chi", "who", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "KI"], ["cosa", "what / thing", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "KO-za"], ["dove", "where", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "DO-ve"], ["quando", "when", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "KWAN-do"], ["perché", "why / because", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "per-KÉ"], ["come", "how / like", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "KO-me"], ["quanto", "how much / many", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "KWAN-to"], ["anche", "also / too", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "AN-ke"], ["già", "already", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "jà"], ["molto", "very / much / many", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "MOL-to"], ["troppo", "too (much)", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "TROP-po"], ["tutto", "all / everything", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "TUT-to"], ["niente", "nothing", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "NYEN-te"], ["qualcosa", "something", 1, "The 30 Most Common Words (learn these BEFORE anything else)", "kwal-KO-za"], ["#", "Italiano", 1, "Numbers", "#"], ["lunedì", "Monday", 1, "Days, Months, Time", "lu-ne-DÌ"], ["martedì", "Tuesday", 1, "Days, Months, Time", "mar-te-DÌ"], ["mercoledì", "Wednesday", 1, "Days, Months, Time", "mer-ko-le-DÌ"], ["giovedì", "Thursday", 1, "Days, Months, Time", "jo-ve-DÌ"], ["venerdì", "Friday", 1, "Days, Months, Time", "ve-ner-DÌ"], ["sabato", "Saturday", 1, "Days, Months, Time", "sa-BA-to"], ["domenica", "Sunday", 1, "Days, Months, Time", "do-me-NI-ka"], ["oggi", "today", 1, "Days, Months, Time", "OG-ji"], ["domani", "tomorrow", 1, "Days, Months, Time", "do-MA-ni"], ["ieri", "yesterday", 1, "Days, Months, Time", "YE-ri"], ["adesso / ora", "now", 1, "Days, Months, Time", "a-DES-so / O-ra"], ["dopo", "after / later", 1, "Days, Months, Time", "DO-po"], ["prima", "before / first", 1, "Days, Months, Time", "PRI-ma"], ["gennaio · febbraio · marzo · aprile · maggio · giugno", "Jan–Jun", 1, "Days, Months, Time", "JEN-nayo · FEB-brayo · MAR-tso · a-PRI-le · MAG-jo · ju-nyo"], ["luglio · agosto · settembre · ottobre · novembre · dicembre", "Jul–Dec", 1, "Days, Months, Time", "LU-lyo · a-GO-sto · set-TEM-bre · ot-TO-bre · no-VEM-bre · di-CHEM-bre"], ["Che ore sono?", "What time is it?", 1, "Days, Months, Time", "KE O-re so-NO?"], ["È l&#x27;una / Sono le due", "It&#x27;s one / two o&#x27;clock", 1, "Days, Months, Time", "È L'U-na / SO-no LE DWE"], ["la mattina · il pomeriggio · la sera · la notte", "morning · afternoon · evening · night", 1, "Days, Months, Time", "LA mat-TI-na · IL po-me-RIG-jo · LA SE-ra · LA NOT-te"], ["la settimana · il mese · l&#x27;anno", "week · month · year", 1, "Days, Months, Time", "LA set-ti-MA-na · IL ME-ze · L'AN-no"], ["io, tu, lui/lei, noi, voi, loro", "I, you, he/she, we, you (pl), they", 2, "People &amp; Family", "YO, TU, lwi/-LEI, NOI, VOI, LO-ro"], ["la persona (f)", "person", 2, "People &amp; Family", "LA per-SO-na (f)"], ["la gente", "people (always singular!)", 2, "People &amp; Family", "LA JEN-te"], ["l&#x27;uomo (m) / gli uomini", "man / men", 2, "People &amp; Family", "L'WO-mo (m) / ly wo-MI-ni"], ["la donna", "woman", 2, "People &amp; Family", "LA DON-na"], ["il ragazzo / la ragazza", "boy / girl; boyfriend / girlfriend", 2, "People &amp; Family", "IL ra-GAT-tso / LA ra-GAT-tsa"], ["il bambino / la bambina", "child", 2, "People &amp; Family", "IL bam-BI-no / LA bam-BI-na"], ["la madre / il padre", "mother / father", 2, "People &amp; Family", "LA MA-dre / IL PA-dre"], ["la mamma / il papà", "mom / dad", 2, "People &amp; Family", "LA MAM-ma / IL pa-PÀ"], ["la sorella / il fratello", "sister / brother", 2, "People &amp; Family", "LA so-REL-la / IL fra-TEL-lo"], ["la figlia / il figlio", "daughter / son", 2, "People &amp; Family", "LA FI-lya / IL FI-lyo"], ["la nonna / il nonno", "grandmother / grandfather", 2, "People &amp; Family", "LA NON-na / IL NON-no"], ["la zia / lo zio", "aunt / uncle", 2, "People &amp; Family", "LA DZYA / LO DZYO"], ["il cugino / la cugina", "cousin", 2, "People &amp; Family", "IL ku-JI-no / LA ku-JI-na"], ["il marito / la moglie", "husband / wife", 2, "People &amp; Family", "IL ma-RI-to / LA MO-lye"], ["il nome", "name", 2, "People &amp; Family", "IL NO-me"], ["l&#x27;amico / l&#x27;amica", "friend", 2, "People &amp; Family", "l'a-MI-ko / l'a-MI-ka"], ["il vicino / la vicina", "neighbor", 2, "People &amp; Family", "IL vi-CHI-no / LA vi-CHI-na"], ["lo straniero", "foreigner", 2, "People &amp; Family", "LO stra-NYE-ro"], ["il cliente / la clientessa", "customer", 2, "People &amp; Family", "IL KLYEN-te / LA klyen-TES-sa"], ["il dottore / la dottoressa", "doctor", 2, "People &amp; Family", "IL dot-TO-re / LA dot-to-RES-sa"], ["l&#x27;insegnante (m/f)", "teacher", 2, "People &amp; Family", "l'in-se-NYAN-te (m/f)"], ["lo studente / la studentessa", "student", 2, "People &amp; Family", "LO stu-DEN-te / LA stu-den-TES-sa"], ["l&#x27;animale (m)", "animal", 2, "Animals", "l'a-ni-MA-le (m)"], ["il cane / il gatto", "dog / cat", 2, "Animals", "IL KA-ne / IL GAT-to"], ["l&#x27;uccello (m)", "bird", 2, "Animals", "l'uk-CHEL-lo (m)"], ["il pesce", "fish", 2, "Animals", "IL PE-she"], ["il cavallo / la mucca", "horse / cow", 2, "Animals", "IL ka-VAL-lo / LA MUK-ka"], ["il maiale / la pecora / la capra", "pig / sheep / goat", 2, "Animals", "IL MAYA-le / LA pe-KO-ra / LA KA-pra"], ["il coniglio", "rabbit", 2, "Animals", "IL ko-NI-lyo"], ["il topo / l&#x27;elefante", "mouse / elephant", 2, "Animals", "IL TO-po / l'e-le-FAN-te"], ["il leone / la tigre / l&#x27;orso", "lion / tiger / bear", 2, "Animals", "IL LEO-ne / LA TI-gre / L'OR-so"], ["la scimmia", "monkey", 2, "Animals", "LA SHIM-mya"], ["il serpente / la rana", "snake / frog", 2, "Animals", "IL ser-PEN-te / LA RA-na"], ["l&#x27;insetto (m)", "insect", 2, "Animals", "l'in-SET-to (m)"], ["rosso / rossa", "red", 2, "Colors *(all agree with the noun: il libro rosso, la casa rossa)*", "ROS-so / ROS-sa"], ["blu (invar.)", "blue", 2, "Colors *(all agree with the noun: il libro rosso, la casa rossa)*", "BLU (in-VAR.)"], ["verde (m/f)", "green", 2, "Colors *(all agree with the noun: il libro rosso, la casa rossa)*", "VER-de (m/f)"], ["giallo / gialla", "yellow", 2, "Colors *(all agree with the noun: il libro rosso, la casa rossa)*", "JAL-lo / JAL-la"], ["arancione (m/f)", "orange", 2, "Colors *(all agree with the noun: il libro rosso, la casa rossa)*", "a-ran-CHO-ne (m/f)"], ["viola (invar.)", "purple", 2, "Colors *(all agree with the noun: il libro rosso, la casa rossa)*", "VYO-la (in-VAR.)"], ["rosa (invar.)", "pink", 2, "Colors *(all agree with the noun: il libro rosso, la casa rossa)*", "RO-za (in-VAR.)"], ["marrone (m/f)", "brown", 2, "Colors *(all agree with the noun: il libro rosso, la casa rossa)*", "mar-RO-ne (m/f)"], ["nero / nera", "black", 2, "Colors *(all agree with the noun: il libro rosso, la casa rossa)*", "NE-ro / NE-ra"], ["bianco / bianca", "white", 2, "Colors *(all agree with the noun: il libro rosso, la casa rossa)*", "BYAN-ko / BYAN-ka"], ["grigio / grigia", "gray", 2, "Colors *(all agree with the noun: il libro rosso, la casa rossa)*", "GRI-jo / GRI-ja"], ["azzurro / azzurra", "sky blue", 2, "Colors *(all agree with the noun: il libro rosso, la casa rossa)*", "at-TSUR-ro / at-TSUR-ra"], ["chiaro / scuro", "light / dark", 2, "Colors *(all agree with the noun: il libro rosso, la casa rossa)*", "KYA-ro / SKU-ro"], ["colorato", "colorful", 2, "Colors *(all agree with the noun: il libro rosso, la casa rossa)*", "ko-lo-RA-to"], ["il pane / il panino", "bread / roll (or small sandwich)", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "IL PA-ne / IL pa-NI-no"], ["l&#x27;acqua (f)", "water", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "L'AK-kwa (f)"], ["il latte / il succo", "milk / juice", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "IL LAT-te / IL SUK-ko"], ["il caffè / il tè", "coffee / tea", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "IL kaf-FÈ / IL TÈ"], ["il vino / la birra", "wine / beer", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "IL VI-no / LA BIR-ra"], ["il formaggio", "cheese", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "IL for-MAG-jo"], ["il pomodoro / la pasta", "tomato / pasta", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "IL po-mo-DO-ro / LA PA-sta"], ["la carne / il pollo", "meat / chicken", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "LA KAR-ne / IL POL-lo"], ["il pesce (again — same word as animal!)", "fish", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "IL PE-she (a-GAIN — SA-me VORD AS a-ni-MAL!)"], ["il riso / la patata / le patatine", "rice / potato / chips", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "IL RI-zo / LA pa-TA-ta / LE pa-ta-TI-ne"], ["la frutta / la verdura", "fruit / vegetables", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "LA FRUT-ta / LA ver-DU-ra"], ["la mela / la pera / l&#x27;arancia", "apple / pear / orange", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "LA ME-la / LA PE-ra / l'a-RAN-cha"], ["la banana / la fragola / l&#x27;uva", "banana / strawberry / grapes", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "LA ba-NA-na / LA fra-GO-la / L'U-va"], ["il limone", "lemon", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "IL li-MO-ne"], ["la torta / il dolce / il cioccolato", "cake / dessert / chocolate", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "LA TOR-ta / IL DOL-che / IL chok-ko-LA-to"], ["lo zucchero / il sale / il pepe", "sugar / salt / pepper", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "LO dzuk-KE-ro / IL SA-le / IL PE-pe"], ["l&#x27;olio (m) / l&#x27;aceto", "oil / vinegar", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "L'O-lyo (m) / l'a-CHE-to"], ["l&#x27;uovo (m) / le uova", "egg / eggs (irregular plural!)", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "L'WO-vo (m) / LE WO-va"], ["la colazione / il pranzo / la cena", "breakfast / lunch / dinner", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "LA ko-la-DZYO-ne / IL PRAN-tso / LA CHE-na"], ["la minestra / la zuppa", "soup", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "LA mi-NES-tra / LA DZUP-pa"], ["il gelato", "ice cream (seriously, learn it)", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "IL je-LA-to"], ["il bicchiere / la tazza", "glass / cup", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "IL bik-KYE-re / LA TAT-tsa"], ["il piatto / la forchetta / il coltello", "plate / fork / knife", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "IL PYAT-to / LA for-KET-ta / IL kol-TEL-lo"], ["il cucchiaio / il cucchiaino", "spoon / teaspoon", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "IL KUK-kyayo / IL kuk-KYAI-no"], ["la tovaglia", "tablecloth", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "LA to-VA-lya"], ["lo snack / il pasto", "snack / meal", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "LO SNAKK / IL PA-sto"], ["la fame / la sete", "hunger / thirst", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "LA FA-me / LA SE-te"], ["Ho fame / Ho sete", "I&#x27;m hungry / thirsty", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "O FA-me / O SE-te"], ["Buon appetito!", "Enjoy your meal!", 2, "Food &amp; Drink (Duolingo&#x27;s favorite topic 😄)", "BWON ap-pe-ti-TO!"], ["i vestiti", "clothes", 2, "Clothing", "I ve-STI-ti"], ["la maglietta / la camicia", "t-shirt / shirt", 2, "Clothing", "LA ma-LYET-ta / LA ka-MI-cha"], ["i pantaloni (pl.)", "pants", 2, "Clothing", "I pan-ta-LO-ni (pl.)"], ["i jeans / la gonna", "jeans / skirt", 2, "Clothing", "I JEANS / LA GON-na"], ["il vestito", "dress (also &quot;suit&quot;)", 2, "Clothing", "IL ve-STI-to"], ["la giacca / il cappotto", "jacket / coat", 2, "Clothing", "LA JAK-ka / IL kap-POT-to"], ["le scarpe / le scarpe da ginnastica", "shoes / sneakers", 2, "Clothing", "LE SKAR-pe / LE SKAR-pe DA jin-na-STI-ka"], ["le calze / i calzini", "stockings / socks", 2, "Clothing", "LE KAL-tse / I kal-TSI-ni"], ["il cappello / la sciarpa / i guanti", "hat / scarf / gloves", 2, "Clothing", "IL kap-PEL-lo / LA SHYAR-pa / I GWAN-ti"], ["la cintura / la cravatta", "belt / tie", 2, "Clothing", "LA chin-TU-ra / LA kra-VAT-ta"], ["gli occhiali / gli occhiali da sole", "glasses / sunglasses", 2, "Clothing", "ly ok-KYA-li / ly ok-KYA-li DA SO-le"], ["la borsa / lo zaino / il portafoglio", "bag / backpack / wallet", 2, "Clothing", "LA BOR-sa / LO DZAI-no / IL por-ta-FO-lyo"], ["la casa / l&#x27;appartamento (m)", "house / apartment", 2, "Home &amp; Household", "LA KA-za / l'ap-par-ta-MEN-to (m)"], ["la stanza / la camera", "room / bedroom", 2, "Home &amp; Household", "LA STAN-tsa / LA ka-ME-ra"], ["la cucina / il bagno", "kitchen / bathroom", 2, "Home &amp; Household", "LA ku-CHI-na / IL BA-nyo"], ["il soggiorno / il salotto", "living room", 2, "Home &amp; Household", "IL sog-JOR-no / IL sa-LOT-to"], ["la porta / la finestra", "door / window", 2, "Home &amp; Household", "LA POR-ta / LA fi-NES-tra"], ["il tavolo / la sedia", "table / chair", 2, "Home &amp; Household", "IL ta-VO-lo / LA SE-dya"], ["il letto / il cuscino / la coperta", "bed / pillow / blanket", 2, "Home &amp; Household", "IL LET-to / IL ku-SHI-no / LA ko-PER-ta"], ["l&#x27;armadio (m) / il comodino", "wardrobe / nightstand", 2, "Home &amp; Household", "l'ar-MA-dyo (m) / IL ko-mo-DI-no"], ["il divano / la lampada", "sofa / lamp", 2, "Home &amp; Household", "IL di-VA-no / LA lam-PA-da"], ["il frigorifero / il forno / il fornello", "fridge / oven / stove", 2, "Home &amp; Household", "IL fri-go-ri-FE-ro / IL FOR-no / IL for-NEL-lo"], ["il lavandino / la doccia / la vasca", "sink / shower / bathtub", 2, "Home &amp; Household", "IL la-van-DI-no / LA DOK-cha / LA VA-ska"], ["l&#x27;asciugamano (m)", "towel", 2, "Home &amp; Household", "l'a-shyu-ga-MA-no (m)"], ["le scale (pl.)", "stairs", 2, "Home &amp; Household", "LE SKA-le (pl.)"], ["il pavimento / il soffitto / il tetto", "floor / ceiling / roof", 2, "Home &amp; Household", "IL pa-vi-MEN-to / IL sof-FIT-to / IL TET-to"], ["il giardino / il balcone", "garden / balcony", 2, "Home &amp; Household", "IL jar-DI-no / IL bal-KO-ne"], ["le chiavi (pl.)", "keys", 2, "Home &amp; Household", "LE KYA-vi (pl.)"], ["il telefono / il computer / la televisione", "phone / computer / TV", 2, "Home &amp; Household", "IL te-le-FO-no / IL kom-pu-TER / LA te-le-vi-ZYO-ne"], ["comprare v", "to buy", 3, "More Essential Verbs", "kom-PRA-re v"], ["vendere v", "to sell", 3, "More Essential Verbs", "ven-DE-re v"], ["prendere v", "to take / get", 3, "More Essential Verbs", "pren-DE-re v"], ["mettere v", "to put", 3, "More Essential Verbs", "met-TE-re v"], ["leggere v", "to read", 3, "More Essential Verbs", "leg-JE-re v"], ["scrivere v", "to write", 3, "More Essential Verbs", "skri-VE-re v"], ["ascoltare v", "to listen", 3, "More Essential Verbs", "a-skol-TA-re v"], ["guardare v", "to watch / look at", 3, "More Essential Verbs", "gwar-DA-re v"], ["cercare v", "to look for / search", 3, "More Essential Verbs", "cher-KA-re v"], ["trovare v", "to find", 3, "More Essential Verbs", "tro-VA-re v"], ["perdere v", "to lose", 3, "More Essential Verbs", "per-DE-re v"], ["chiedere v", "to ask", 3, "More Essential Verbs", "kye-DE-re v"], ["rispondere v", "to answer", 3, "More Essential Verbs", "ri-spon-DE-re v"], ["aprire v", "to open", 3, "More Essential Verbs", "a-PRI-re v"], ["chiudere v", "to close", 3, "More Essential Verbs", "kyu-DE-re v"], ["entrare v", "to enter", 3, "More Essential Verbs", "en-TRA-re v"], ["uscire v", "to go out", 3, "More Essential Verbs", "u-SHI-re v"], ["correre v", "to run", 3, "More Essential Verbs", "kor-RE-re v"], ["camminare v", "to walk", 3, "More Essential Verbs", "kam-mi-NA-re v"], ["nuotare v", "to swim", 3, "More Essential Verbs", "nwo-TA-re v"], ["viaggiare v", "to travel", 3, "More Essential Verbs", "vyag-JA-re v"], ["aspettare v", "to wait (for)", 3, "More Essential Verbs", "a-spet-TA-re v"], ["aiutare v", "to help", 3, "More Essential Verbs", "ayu-TA-re v"], ["imparare v", "to learn", 3, "More Essential Verbs", "im-pa-RA-re v"], ["insegnare v", "to teach", 3, "More Essential Verbs", "in-se-NYA-re v"], ["preferire v", "to prefer", 3, "More Essential Verbs", "pre-fe-RI-re v"], ["finire v", "to finish", 3, "More Essential Verbs", "fi-NI-re v"], ["pagare v", "to pay", 3, "More Essential Verbs", "pa-GA-re v"], ["costare v", "to cost", 3, "More Essential Verbs", "ko-STA-re v"], ["chiamare v", "to call", 3, "More Essential Verbs", "kya-MA-re v"], ["lasciare v", "to leave (something)", 3, "More Essential Verbs", "la-SHYA-re v"], ["partire v", "to leave (depart)", 3, "More Essential Verbs", "par-TI-re v"], ["tornare v", "to return", 3, "More Essential Verbs", "tor-NA-re v"], ["restare / rimanere v", "to stay / remain", 3, "More Essential Verbs", "re-STA-re / ri-ma-NE-re v"], ["portare v", "to bring / carry / wear", 3, "More Essential Verbs", "por-TA-re v"], ["sentire v", "to feel / hear / smell", 3, "More Essential Verbs", "sen-TI-re v"], ["provare v", "to try / taste", 3, "More Essential Verbs", "pro-VA-re v"], ["iniziare / cominciare v", "to begin", 3, "More Essential Verbs", "i-ni-DZYA-re / ko-min-CHA-re v"], ["piacere v", "to like (lit. &quot;to please&quot;) — *Mi piace la pizza*", 3, "More Essential Verbs", "pya-CHE-re v"], ["grande / piccolo", "big / small", 3, "Adjectives — People", "GRAN-de / pik-KO-lo"], ["buono / cattivo", "good / bad", 3, "Adjectives — People", "BWO-no / kat-TI-vo"], ["bello / brutto", "beautiful / ugly", 3, "Adjectives — People", "BEL-lo / BRUT-to"], ["nuovo / vecchio", "new / old", 3, "Adjectives — People", "NWO-vo / VEK-kyo"], ["giovane / anziano", "young / old (people)", 3, "Adjectives — People", "jo-VA-ne / an-TSYA-no"], ["alto / basso", "tall / short", 3, "Adjectives — People", "AL-to / BAS-so"], ["magro / grasso", "thin / fat", 3, "Adjectives — People", "MA-gro / GRAS-so"], ["felice / triste", "happy / sad", 3, "Adjectives — People", "fe-LI-che / TRI-ste"], ["contento", "pleased / happy", 3, "Adjectives — People", "kon-TEN-to"], ["arrabbiato", "angry", 3, "Adjectives — People", "ar-rab-BYA-to"], ["stanco", "tired", 3, "Adjectives — People", "STAN-ko"], ["occupato / libero", "busy / free", 3, "Adjectives — People", "ok-ku-PA-to / li-BE-ro"], ["forte / debole", "strong / weak", 3, "Adjectives — People", "FOR-te / de-BO-le"], ["veloce / lento", "fast / slow", 3, "Adjectives — People", "ve-LO-che / LEN-to"], ["facile / difficile", "easy / difficult", 3, "Adjectives — People", "fa-CHI-le / dif-fi-CHI-le"], ["importante", "important", 3, "Adjectives — People", "im-por-TAN-te"], ["possibile / impossibile", "possible / impossible", 3, "Adjectives — People", "pos-si-BI-le / im-pos-si-BI-le"], ["vero / falso", "true / false", 3, "Adjectives — People", "VE-ro / FAL-so"], ["sicuro", "sure / safe", 3, "Adjectives — People", "si-KU-ro"], ["pronto", "ready", 3, "Adjectives — People", "PRON-to"], ["pulito / sporco", "clean / dirty", 3, "Adjectives — People", "pu-LI-to / SPOR-ko"], ["aperto / chiuso", "open / closed", 3, "Adjectives — People", "a-PER-to / kYu-zo"], ["interessante / noioso", "interesting / boring", 3, "Adjectives — People", "in-te-res-SAN-te / NOYO-zo"], ["simpatico / antipatico", "nice / unpleasant", 3, "Adjectives — People", "sim-pa-TI-ko / an-ti-pa-TI-ko"], ["gentile (m/f)", "kind", 3, "Adjectives — People", "jen-TI-le (m/f)"], ["caldo / freddo", "hot / cold", 3, "Adjectives — People", "KAL-do / FRED-do"], ["caro / economico", "expensive / cheap", 3, "Adjectives — People", "KA-ro / e-ko-no-MI-ko"], ["sempre / mai / a volte", "always / never / sometimes", 3, "Adverbs &amp; Connectors", "SEM-pre / MAI / A VOL-te"], ["spesso / raramente", "often / rarely", 3, "Adverbs &amp; Connectors", "SPES-so / ra-ra-MEN-te"], ["molto / poco / abbastanza", "very / little / enough", 3, "Adverbs &amp; Connectors", "MOL-to / PO-ko / ab-ba-STAN-tsa"], ["bene / male", "well / badly", 3, "Adverbs &amp; Connectors", "BE-ne / MA-le"], ["qui vicino / lontano", "nearby / far", 3, "Adverbs &amp; Connectors", "kwi vi-CHI-no / lon-TA-no"], ["presto / tardi", "early / late", 3, "Adverbs &amp; Connectors", "PRE-sto / TAR-di"], ["lentamente", "slowly", 3, "Adverbs &amp; Connectors", "len-ta-MEN-te"], ["fortunatamente / purtroppo", "fortunately / unfortunately", 3, "Adverbs &amp; Connectors", "for-tu-na-ta-MEN-te / pur-TROP-po"], ["allora / quindi / perciò", "so / therefore", 3, "Adverbs &amp; Connectors", "al-LO-ra / kwin-di / per-chò"], ["perché / poiché", "because / since", 3, "Adverbs &amp; Connectors", "per-KÉ / poi-KÉ"], ["sebbene / anche se", "although / even if", 3, "Adverbs &amp; Connectors", "seb-BE-ne / AN-ke SE"], ["mentre", "while", 3, "Adverbs &amp; Connectors", "MEN-tre"], ["durante", "during", 3, "Adverbs &amp; Connectors", "du-RAN-te"], ["secondo me", "in my opinion", 3, "Adverbs &amp; Connectors", "se-KON-do ME"], ["infatti", "in fact", 3, "Adverbs &amp; Connectors", "in-FAT-ti"], ["il posto / il luogo", "place / place (formal)", 3, "Places &amp; Directions", "IL PO-sto / IL LWO-go"], ["la città / il paese", "city / town (or country)", 3, "Places &amp; Directions", "LA chit-TÀ / IL PAE-ze"], ["la strada / la via", "street / road", 3, "Places &amp; Directions", "LA STRA-da / LA VYA"], ["la piazza", "square / plaza", 3, "Places &amp; Directions", "LA PYAT-tsa"], ["il negozio / il supermercato", "shop / supermarket", 3, "Places &amp; Directions", "IL ne-GO-dzyo / IL su-per-mer-KA-to"], ["il mercato", "market", 3, "Places &amp; Directions", "IL mer-KA-to"], ["il ristorante / la trattoria", "restaurant / casual eatery", 3, "Places &amp; Directions", "IL ri-sto-RAN-te / LA trat-TO-rya"], ["il bar / la caffetteria", "café bar / coffee shop", 3, "Places &amp; Directions", "IL BAR / LA kaf-fet-TE-rya"], ["l&#x27;albergo (m) / l&#x27;hotel (m)", "hotel", 3, "Places &amp; Directions", "l'al-BER-go (m) / l'o-TEL (m)"], ["l&#x27;ospedale (m)", "hospital", 3, "Places &amp; Directions", "l'o-spe-DA-le (m)"], ["la farmacia / il medico", "pharmacy / doctor (GP)", 3, "Places &amp; Directions", "LA far-MA-cha / IL me-DI-ko"], ["la scuola / l&#x27;università (f)", "school / university", 3, "Places &amp; Directions", "LA SKWO-la / l'u-ni-ver-si-TÀ (f)"], ["la stazione / l&#x27;aeroporto (m)", "station / airport", 3, "Places &amp; Directions", "LA sta-DZYO-ne / l'ae-ro-POR-to (m)"], ["la banca / l&#x27;ufficio postale", "bank / post office", 3, "Places &amp; Directions", "LA BAN-ka / l'uf-FI-cho po-STA-le"], ["il museo / il cinema / il teatro", "museum / cinema / theater", 3, "Places &amp; Directions", "IL MU-zeo / IL chi-NE-ma / IL TEA-tro"], ["la chiesa / il museo", "church", 3, "Places &amp; Directions", "LA KYE-za / IL MU-zeo"], ["il parco / la spiaggia / il mare", "park / beach / sea", 3, "Places &amp; Directions", "IL PAR-ko / LA SPYAG-ja / IL MA-re"], ["la montagna / il lago", "mountain / lake", 3, "Places &amp; Directions", "LA mon-TA-nya / IL LA-go"], ["il fiume / il ponte", "river / bridge", 3, "Places &amp; Directions", "IL fYu-me / IL PON-te"], ["sinistra / destra / dritto", "left / right / straight", 3, "Places &amp; Directions", "si-NIS-tra / DES-tra / DRIT-to"], ["vicino a / lontano da", "near / far from", 3, "Places &amp; Directions", "vi-CHI-no A / lon-TA-no DA"], ["davanti a / dietro", "in front of / behind", 3, "Places &amp; Directions", "da-VAN-ti A / DYE-tro"], ["sopra / sotto / accanto a", "above / under / next to", 3, "Places &amp; Directions", "SO-pra / SOT-to / ak-KAN-to A"], ["dentro / fuori", "inside / outside", 3, "Places &amp; Directions", "DEN-tro / FWO-ri"], ["a nord / sud / est / ovest", "north / south / east / west", 3, "Places &amp; Directions", "A NORD / SUD / EST / o-VEST"], ["da", "from / since / by", 3, "Prepositions (the glue!)", "DA"], ["con", "with", 3, "Prepositions (the glue!)", "KON"], ["senza", "without", 3, "Prepositions (the glue!)", "SEN-tsa"], ["per", "for / through / in order to", 3, "Prepositions (the glue!)", "PER"], ["su", "on / about", 3, "Prepositions (the glue!)", "SU"], ["tra / fra", "between / among / in (time)", 3, "Prepositions (the glue!)", "TRA / FRA"], ["prima di / dopo di", "before / after", 3, "Prepositions (the glue!)", "PRI-ma DI / DO-po DI"], ["vicino a", "near", 3, "Prepositions (the glue!)", "vi-CHI-no A"], ["lontano da", "far from", 3, "Prepositions (the glue!)", "lon-TA-no DA"], ["insieme a", "together with", 3, "Prepositions (the glue!)", "in-SYE-me A"], ["il lavoro", "work / job", 3, "Work &amp; School", "IL la-VO-ro"], ["il/la impiegato/a", "office worker", 3, "Work &amp; School", "IL/-la im-pye-ga-TO/-a"], ["il/la commesso/a", "shop assistant", 3, "Work &amp; School", "IL/-la kom-mes-SO/-a"], ["il/la cameriere/a", "waiter/waitress", 3, "Work &amp; School", "IL/-la ka-me-rye-RE/-a"], ["il/la cuoco/a", "cook / chef", 3, "Work &amp; School", "IL/-la kwo-KO/-a"], ["l&#x27;operaio / l&#x27;operaia", "factory worker", 3, "Work &amp; School", "l'o-PE-rayo / l'o-PE-raya"], ["il/la poliziotto/a", "police officer", 3, "Work &amp; School", "IL/-la po-li-dzyot-TO/-a"], ["il/la giornalista", "journalist", 3, "Work &amp; School", "IL/-la jor-na-LI-sta"], ["l&#x27;ingegnere (m/f)", "engineer", 3, "Work &amp; School", "l'in-je-NYE-re (m/f)"], ["l&#x27;avvocato / l&#x27;avvocatessa", "lawyer", 3, "Work &amp; School", "l'av-vo-KA-to / l'av-vo-ka-TES-sa"], ["il/la musicista", "musician", 3, "Work &amp; School", "IL/-la mu-zi-CHI-sta"], ["l&#x27;artista (m/f)", "artist", 3, "Work &amp; School", "l'ar-TI-sta (m/f)"], ["il capo / la direttrice", "boss", 3, "Work &amp; School", "IL KA-po / LA di-ret-TRI-che"], ["lo stipendio", "salary", 3, "Work &amp; School", "LO sti-PEN-dyo"], ["il colloquio", "job interview", 3, "Work &amp; School", "IL kol-LO-kwyo"], ["il contratto", "contract", 3, "Work &amp; School", "IL kon-TRAT-to"], ["la materia / la lezione", "subject / lesson", 3, "Work &amp; School", "LA ma-TE-rya / LA le-DZYO-ne"], ["l&#x27;esame (m)", "exam", 3, "Work &amp; School", "l'e-ZA-me (m)"], ["il compito", "homework / task", 3, "Work &amp; School", "IL kom-PI-to"], ["la parola / la frase", "word / sentence", 3, "Work &amp; School", "LA pa-RO-la / LA FRA-ze"], ["il dizionario / il quaderno", "dictionary / notebook", 3, "Work &amp; School", "IL di-dzyo-NA-ryo / IL kwa-DER-no"], ["la matita / la penna / la gomma", "pencil / pen / eraser", 3, "Work &amp; School", "LA ma-TI-ta / LA PEN-na / LA GOM-ma"], ["studiare v", "to study", 3, "Work &amp; School", "stu-DYA-re v"], ["Chi?", "Who?", 4, "Question Words (Interrogativi)", "KI?"], ["Cosa? / Che cosa?", "What?", 4, "Question Words (Interrogativi)", "Ko-ZA? / KE ko-ZA?"], ["Dove?", "Where?", 4, "Question Words (Interrogativi)", "Do-VE?"], ["Quando?", "When?", 4, "Question Words (Interrogativi)", "Kwan-DO?"], ["Perché?", "Why?", 4, "Question Words (Interrogativi)", "Per-KÉ?"], ["Come?", "How?", 4, "Question Words (Interrogativi)", "Ko-ME?"], ["Quanto/a/i/e?", "How much/many?", 4, "Question Words (Interrogativi)", "Kwan-to/-a/-i/-E?"], ["Quale?", "Which?", 4, "Question Words (Interrogativi)", "Kwa-LE?"], ["Di chi?", "Whose?", 4, "Question Words (Interrogativi)", "DI KI?"], ["il corpo", "body", 4, "Body &amp; Health", "IL KOR-po"], ["la testa / il viso", "head / face", 4, "Body &amp; Health", "LA TE-sta / IL VI-zo"], ["l&#x27;occhio (m) / gli occhi", "eye / eyes", 4, "Body &amp; Health", "L'OK-kyo (m) / ly OK-ki"], ["il naso / la bocca / l&#x27;orecchio (m)", "nose / mouth / ear", 4, "Body &amp; Health", "IL NA-zo / LA BOK-ka / l'o-REK-kyo (m)"], ["i capelli (pl.)", "hair", 4, "Body &amp; Health", "I ka-PEL-li (pl.)"], ["il braccio / le braccia", "arm / arms (irregular!)", 4, "Body &amp; Health", "IL BRAK-cho / LE BRAK-cha"], ["la mano / le mani", "hand / hands (feminine!)", 4, "Body &amp; Health", "LA MA-no / LE MA-ni"], ["il dito / le dita", "finger / fingers (irregular!)", 4, "Body &amp; Health", "IL DI-to / LE DI-ta"], ["la gamba / il piede", "leg / foot", 4, "Body &amp; Health", "LA GAM-ba / IL PYE-de"], ["lo stomaco / il cuore", "stomach / heart", 4, "Body &amp; Health", "LO sto-MA-ko / IL KWO-re"], ["la schiena", "back", 4, "Body &amp; Health", "LA SKYE-na"], ["il dolore", "pain", 4, "Body &amp; Health", "IL do-LO-re"], ["Mi fa male…", "…hurts (lit. &quot;to me makes pain&quot;)", 4, "Body &amp; Health", "MI FA ma-LE…"], ["Ho mal di testa", "I have a headache", 4, "Body &amp; Health", "O MAL DI TE-sta"], ["la febbre / il raffreddore / la tosse", "fever / cold / cough", 4, "Body &amp; Health", "LA FEB-bre / IL raf-fred-DO-re / LA TOS-se"], ["la medicina / la pillola", "medicine / pill", 4, "Body &amp; Health", "LA me-di-CHI-na / LA pil-LO-la"], ["la salute", "health", 4, "Body &amp; Health", "LA sa-LU-te"], ["Mi sono ammalato", "I got sick", 4, "Body &amp; Health", "MI SO-no am-ma-LA-to"], ["Guarisci presto!", "Get well soon!", 4, "Body &amp; Health", "Gwa-RI-shi pre-STO!"], ["mi / ti / lo / la / ci / vi / li / le", "me / you / him / her / us / you / them", 4, "Pronouns — Direct &amp; Indirect (Duolingo&#x27;s favorite trap!)", "MI / TI / LO / LA / CHI / VI / LI / LE"], ["mi / ti / gli / le / ci / vi / gli", "to me / to you / to him / to her / to us / to you / to them", 4, "Pronouns — Direct &amp; Indirect (Duolingo&#x27;s favorite trap!)", "MI / TI / ly / LE / CHI / VI / ly"], ["me / te / lui / lei / noi / voi / loro", "(stressed forms) me / you / him / her…", 4, "Pronouns — Direct &amp; Indirect (Duolingo&#x27;s favorite trap!)", "ME / TE / lWi / LEI / NOI / VOI / LO-ro"], ["*Mi piace*", "I like it (lit. &quot;to me it pleases&quot;)", 4, "Pronouns — Direct &amp; Indirect (Duolingo&#x27;s favorite trap!)", "*MI pya-CHE*"], ["*Te lo dico*", "I&#x27;ll tell you (lit. &quot;to-you it I-say&quot;)", 4, "Pronouns — Direct &amp; Indirect (Duolingo&#x27;s favorite trap!)", "*TE LO di-KO*"], ["*Gli ho parlato*", "I spoke to him", 4, "Pronouns — Direct &amp; Indirect (Duolingo&#x27;s favorite trap!)", "*ly O par-la-TO*"], ["*Ci vediamo*", "See you! (&quot;we see each other&quot;)", 4, "Pronouns — Direct &amp; Indirect (Duolingo&#x27;s favorite trap!)", "*CHI ve-dya-MO*"], ["qualcuno / nessuno / ognuno", "someone / no one / everyone", 4, "Pronouns — Direct &amp; Indirect (Duolingo&#x27;s favorite trap!)", "kwal-KU-no / nes-SU-no / o-NYU-no"], ["tutto / ogni / alcuni", "all / every / some", 4, "Pronouns — Direct &amp; Indirect (Duolingo&#x27;s favorite trap!)", "TUT-to / O-nyi / al-KU-ni"], ["questo / quello / quell&#x27;", "this / that", 4, "Pronouns — Direct &amp; Indirect (Duolingo&#x27;s favorite trap!)", "KWE-sto / KWEL-lo / KWELL'"], ["il viaggio / il biglietto", "journey / ticket", 4, "Travel &amp; Transport", "IL VYAG-jo / IL bi-LYET-to"], ["l&#x27;aereo (m) / il treno / la macchina", "plane / train / car", 4, "Travel &amp; Transport", "L'AE-reo (m) / IL TRE-no / LA mak-KI-na"], ["l&#x27;autobus (m) / il tram / la metropolitana", "bus / tram / subway", 4, "Travel &amp; Transport", "l'au-to-BUS (m) / IL TRAM / LA me-tro-po-li-TA-na"], ["la bicicletta / la moto / la barca", "bicycle / motorbike / boat", 4, "Travel &amp; Transport", "LA bi-chi-KLET-ta / LA MO-to / LA BAR-ka"], ["la valigia / lo zaino (again!)", "suitcase / backpack", 4, "Travel &amp; Transport", "LA va-LI-ja / LO DZAI-no (a-GAIN!)"], ["il passaporto / il visto", "passport / visa", 4, "Travel &amp; Transport", "IL pas-sa-POR-to / IL VI-sto"], ["la dogana / la valuta", "customs / currency", 4, "Travel &amp; Transport", "LA do-GA-na / LA va-LU-ta"], ["l&#x27;uscita (f) / l&#x27;entrata", "exit / entrance", 4, "Travel &amp; Transport", "l'u-SHI-ta (f) / l'en-TRA-ta"], ["il binario / il vagone", "platform / carriage", 4, "Travel &amp; Transport", "IL bi-NA-ryo / IL va-GO-ne"], ["prenotare v", "to book", 4, "Travel &amp; Transport", "pre-no-TA-re v"], ["partire v (again)", "to depart", 4, "Travel &amp; Transport", "par-TI-re v (a-GAIN)"], ["atterrare / decollare v", "to land / take off", 4, "Travel &amp; Transport", "at-ter-RA-re / de-kol-LA-re v"], ["fermata / orario", "stop / timetable", 4, "Travel &amp; Transport", "fer-MA-ta / o-RA-ryo"], ["C&#x27;è…? / Dov&#x27;è…?", "Is there…? / Where is…?", 4, "Travel &amp; Transport", "K'È…? / Dov'-È…?"], ["Mi sono perso/a", "I&#x27;m lost", 4, "Travel &amp; Transport", "MI SO-no per-SO/-a"], ["il tempo (anche meteo!)", "time (AND weather!)", 4, "Weather, Nature &amp; Environment", "IL TEM-po (AN-ke me-TEO!)"], ["Che tempo fa?", "What&#x27;s the weather like?", 4, "Weather, Nature &amp; Environment", "KE TEM-po FA?"], ["Fa caldo / freddo", "It&#x27;s hot / cold", 4, "Weather, Nature &amp; Environment", "FA KAL-do / FRED-do"], ["C&#x27;è il sole / È nuvoloso / Piove", "It&#x27;s sunny / cloudy / raining", 4, "Weather, Nature &amp; Environment", "K'È IL SO-le / È nu-vo-LO-zo / PYO-ve"], ["Nevica / Tira vento", "It&#x27;s snowing / windy", 4, "Weather, Nature &amp; Environment", "Ne-VI-ka / TI-ra VEN-to"], ["il temporale / la nebbia", "storm / fog", 4, "Weather, Nature &amp; Environment", "IL tem-po-RA-le / LA NEB-bya"], ["l&#x27;albero (m) / il fiore", "tree / flower", 4, "Weather, Nature &amp; Environment", "l'al-BE-ro (m) / IL FYO-re"], ["la foglia / il bosco / la foresta", "leaf / woods / forest", 4, "Weather, Nature &amp; Environment", "LA FO-lya / IL BO-sko / LA fo-RE-sta"], ["il cielo / la nuvola / la stella", "sky / cloud / star", 4, "Weather, Nature &amp; Environment", "IL CHE-lo / LA nu-VO-la / LA STEL-la"], ["la luna / il sole", "moon / sun", 4, "Weather, Nature &amp; Environment", "LA LU-na / IL SO-le"], ["la pioggia / la neve / il vento", "rain / snow / wind", 4, "Weather, Nature &amp; Environment", "LA PYOG-ja / LA NE-ve / IL VEN-to"], ["l&#x27;ambiente (m)", "environment", 4, "Weather, Nature &amp; Environment", "l'am-BYEN-te (m)"], ["la terra / il mondo", "earth / world", 4, "Weather, Nature &amp; Environment", "LA TER-ra / IL MON-do"], ["l&#x27;aria (f)", "air", 4, "Weather, Nature &amp; Environment", "L'A-rya (f)"], ["il fuoco", "fire", 4, "Weather, Nature &amp; Environment", "IL FWO-ko"], ["ho fatto", "I did / made", 4, "The Passato Prossimo (Present Perfect) — you&#x27;ll need these auxiliaries", "O FAT-to"], ["sono andato/a", "I went (movement → essere!)", 4, "The Passato Prossimo (Present Perfect) — you&#x27;ll need these auxiliaries", "SO-no an-da-TO/-a"], ["ho mangiato / bevuto", "I ate / drank", 4, "The Passato Prossimo (Present Perfect) — you&#x27;ll need these auxiliaries", "O man-JA-to / be-VU-to"], ["ho visto", "I saw", 4, "The Passato Prossimo (Present Perfect) — you&#x27;ll need these auxiliaries", "O VI-sto"], ["ho detto", "I said", 4, "The Passato Prossimo (Present Perfect) — you&#x27;ll need these auxiliaries", "O DET-to"], ["sono stato/a", "I was / stayed", 4, "The Passato Prossimo (Present Perfect) — you&#x27;ll need these auxiliaries", "SO-no sta-TO/-a"], ["ho preso", "I took", 4, "The Passato Prossimo (Present Perfect) — you&#x27;ll need these auxiliaries", "O PRE-zo"], ["ho dato", "I gave", 4, "The Passato Prossimo (Present Perfect) — you&#x27;ll need these auxiliaries", "O DA-to"], ["è nato/a", "was born", 4, "The Passato Prossimo (Present Perfect) — you&#x27;ll need these auxiliaries", "È na-TO/-a"], ["è morto/a", "died", 4, "The Passato Prossimo (Present Perfect) — you&#x27;ll need these auxiliaries", "È mor-TO/-a"], ["ieri ho…", "yesterday I…", 4, "The Passato Prossimo (Present Perfect) — you&#x27;ll need these auxiliaries", "YE-ri O…"], ["andrò / farò / sarò / avrò", "I will go / do / be / have", 5, "Future Tense Essentials", "an-DRÒ / fa-RÒ / sa-RÒ / a-VRÒ"], ["domani… / la prossima settimana", "tomorrow… / next week", 5, "Future Tense Essentials", "do-ma-NI… / LA pros-SI-ma set-ti-MA-na"], ["più tardi / più avanti", "later / further ahead", 5, "Future Tense Essentials", "pYù TAR-di / pYù a-VAN-ti"], ["fra due giorni", "in two days", 5, "Future Tense Essentials", "FRA DWE JOR-ni"], ["spero di…", "I hope to…", 5, "Future Tense Essentials", "SPE-ro DI…"], ["ho intenzione di…", "I intend to…", 5, "Future Tense Essentials", "O in-ten-TSYO-ne DI…"], ["vorrei…", "I would like…  (the most useful word in restaurants)", 5, "Conditional — Politeness &amp; Hypotheticals", "vor-REI…"], ["potrei…?", "could I…?", 5, "Conditional — Politeness &amp; Hypotheticals", "po-TREI…?"], ["dovrei…", "I should…", 5, "Conditional — Politeness &amp; Hypotheticals", "do-VREI…"], ["mi piacerebbe…", "I would like to…", 5, "Conditional — Politeness &amp; Hypotheticals", "MI pya-che-reb-BE…"], ["potrebbe ripetere?", "could you repeat that?", 5, "Conditional — Politeness &amp; Hypotheticals", "po-TREB-be ri-pe-te-RE?"], ["se avessi tempo…", "if I had time…", 5, "Conditional — Politeness &amp; Hypotheticals", "SE a-VES-si tem-PO…"], ["dovrebbe essere", "it should be", 5, "Conditional — Politeness &amp; Hypotheticals", "do-VREB-be es-SE-re"], ["alzarsi", "to get up", 5, "Reflexive Verbs (Duolingo skill: Reflexives)", "al-TSAR-si"], ["svegliarsi", "to wake up", 5, "Reflexive Verbs (Duolingo skill: Reflexives)", "sve-LYAR-si"], ["lavarsi / vestirsi", "to wash oneself / get dressed", 5, "Reflexive Verbs (Duolingo skill: Reflexives)", "la-VAR-si / ve-STIR-si"], ["addormentarsi", "to fall asleep", 5, "Reflexive Verbs (Duolingo skill: Reflexives)", "ad-dor-men-TAR-si"], ["chiamarsi", "to be called (*Mi chiamo…*)", 5, "Reflexive Verbs (Duolingo skill: Reflexives)", "kya-MAR-si"], ["sentirsi", "to feel (*Mi sento bene*)", 5, "Reflexive Verbs (Duolingo skill: Reflexives)", "sen-TIR-si"], ["divertirsi", "to have fun", 5, "Reflexive Verbs (Duolingo skill: Reflexives)", "di-ver-TIR-si"], ["arrabbiarsi", "to get angry", 5, "Reflexive Verbs (Duolingo skill: Reflexives)", "ar-rab-BYAR-si"], ["innamorarsi", "to fall in love", 5, "Reflexive Verbs (Duolingo skill: Reflexives)", "in-na-mo-RAR-si"], ["prepararsi", "to get ready", 5, "Reflexive Verbs (Duolingo skill: Reflexives)", "pre-pa-RAR-si"], ["mi / ti / si / ci / vi / si", "myself / yourself…", 5, "Reflexive Verbs (Duolingo skill: Reflexives)", "MI / TI / SI / CHI / VI / SI"], ["voglio che…", "I want that… (+ subjunctive)", 5, "Subjunctive Triggers (just the keywords first)", "VO-lyo KE…"], ["spero che…", "I hope that…", 5, "Subjunctive Triggers (just the keywords first)", "SPE-ro KE…"], ["penso che…", "I think that…", 5, "Subjunctive Triggers (just the keywords first)", "PEN-so KE…"], ["è importante che…", "it&#x27;s important that…", 5, "Subjunctive Triggers (just the keywords first)", "È im-por-TAN-te KE…"], ["benché / sebbene", "although", 5, "Subjunctive Triggers (just the keywords first)", "ben-KÉ / seb-BE-ne"], ["affinché", "so that", 5, "Subjunctive Triggers (just the keywords first)", "af-fin-KÉ"], ["la vita / la morte", "life / death", 5, "Abstract &amp; Opinion Words", "LA VI-ta / LA MOR-te"], ["l&#x27;amore (m) / l&#x27;odio", "love / hate", 5, "Abstract &amp; Opinion Words", "l'a-MO-re (m) / L'O-dyo"], ["la libertà / la giustizia", "freedom / justice", 5, "Abstract &amp; Opinion Words", "LA li-ber-TÀ / LA ju-STI-dzya"], ["la verità / la menzogna", "truth / lie", 5, "Abstract &amp; Opinion Words", "LA ve-ri-TÀ / LA men-TSO-nya"], ["l&#x27;idea (f) / il pensiero", "idea / thought", 5, "Abstract &amp; Opinion Words", "L'I-dea (f) / IL pen-SYE-ro"], ["il sogno / la realtà", "dream / reality", 5, "Abstract &amp; Opinion Words", "IL SO-nyo / LA real-TÀ"], ["il futuro / il passato / il presente", "future / past / present", 5, "Abstract &amp; Opinion Words", "IL fu-TU-ro / IL pas-SA-to / IL pre-ZEN-te"], ["la paura", "fear", 5, "Abstract &amp; Opinion Words", "LA PAU-ra"], ["Ho paura", "I&#x27;m afraid", 5, "Abstract &amp; Opinion Words", "O PAU-ra"], ["il piacere / il dispiacere", "pleasure / displeasure", 5, "Abstract &amp; Opinion Words", "IL pya-CHE-re / IL di-spya-CHE-re"], ["la fortuna / la sfortuna", "luck / bad luck", 5, "Abstract &amp; Opinion Words", "LA for-TU-na / LA sfor-TU-na"], ["Buona fortuna!", "Good luck!", 5, "Abstract &amp; Opinion Words", "BWO-na for-tu-NA!"], ["il successo / il fallimento", "success / failure", 5, "Abstract &amp; Opinion Words", "IL suk-CHES-so / IL fal-li-MEN-to"], ["il problema (m!)", "problem (masculine despite -a!)", 5, "Abstract &amp; Opinion Words", "IL pro-BLE-ma (m!)"], ["il sistema (m!)", "system (masculine!)", 5, "Abstract &amp; Opinion Words", "IL si-STE-ma (m!)"], ["il programma (m!)", "program (masculine!)", 5, "Abstract &amp; Opinion Words", "IL pro-GRAM-ma (m!)"], ["il clima (m!)", "climate (masculine!)", 5, "Abstract &amp; Opinion Words", "IL KLI-ma (m!)"], ["subito / immediatamente", "immediately", 5, "Time Expressions &amp; Connectors (fluency glue)", "su-BI-to / im-me-dya-ta-MEN-te"], ["all&#x27;improvviso", "suddenly", 5, "Time Expressions &amp; Connectors (fluency glue)", "all'-im-prov-VI-zo"], ["lentamente / velocemente", "slowly / quickly", 5, "Time Expressions &amp; Connectors (fluency glue)", "len-ta-MEN-te / ve-lo-che-MEN-te"], ["di solito / generalmente", "usually / generally", 5, "Time Expressions &amp; Connectors (fluency glue)", "DI so-LI-to / je-ne-ral-MEN-te"], ["a volte / talvolta", "sometimes", 5, "Time Expressions &amp; Connectors (fluency glue)", "A VOL-te / tal-VOL-ta"], ["ogni giorno / ogni tanto", "every day / once in a while", 5, "Time Expressions &amp; Connectors (fluency glue)", "O-nyi JOR-no / O-nyi TAN-to"], ["non… ancora", "not yet", 5, "Time Expressions &amp; Connectors (fluency glue)", "NON… an-KO-ra"], ["da quando / da quanto tempo", "since when / how long", 5, "Time Expressions &amp; Connectors (fluency glue)", "DA KWAN-do / DA KWAN-to TEM-po"], ["fra poco", "in a little while", 5, "Time Expressions &amp; Connectors (fluency glue)", "FRA PO-ko"], ["ormai", "by now / at this point", 5, "Time Expressions &amp; Connectors (fluency glue)", "OR-mai"], ["invece", "instead", 5, "Time Expressions &amp; Connectors (fluency glue)", "in-VE-che"], ["tuttavia / però", "however / but", 5, "Time Expressions &amp; Connectors (fluency glue)", "tut-TA-vya / pe-RÒ"], ["d&#x27;altra parte", "on the other hand", 5, "Time Expressions &amp; Connectors (fluency glue)", "D'AL-tra PAR-te"], ["a causa di / grazie a", "because of / thanks to", 5, "Time Expressions &amp; Connectors (fluency glue)", "A KAU-za DI / GRA-dzye A"], ["nonostante", "despite", 5, "Time Expressions &amp; Connectors (fluency glue)", "no-no-STAN-te"], ["per esempio / ad esempio", "for example", 5, "Time Expressions &amp; Connectors (fluency glue)", "PER e-ZEM-pyo / AD e-ZEM-pyo"], ["cioè", "that is / I mean", 5, "Time Expressions &amp; Connectors (fluency glue)", "CHOÈ"], ["insomma", "in short / basically", 5, "Time Expressions &amp; Connectors (fluency glue)", "in-SOM-ma"], ["basta!", "enough!", 5, "Time Expressions &amp; Connectors (fluency glue)", "ba-STA!"], ["Dai!", "Come on!", 5, "Fun Extras — Slang &amp; Real Italian", "DAI!"], ["Figurati!", "No worries! / Imagine!", 5, "Fun Extras — Slang &amp; Real Italian", "Fi-gu-ra-TI!"], ["Magari!", "I wish!", 5, "Fun Extras — Slang &amp; Real Italian", "Ma-ga-RI!"], ["Che bello!", "How nice!", 5, "Fun Extras — Slang &amp; Real Italian", "KE bel-LO!"], ["Che schifo!", "How disgusting!", 5, "Fun Extras — Slang &amp; Real Italian", "KE ski-FO!"], ["In bocca al lupo!", "Good luck! (lit. &quot;in the wolf&#x27;s mouth!&quot;)", 5, "Fun Extras — Slang &amp; Real Italian", "IN BOK-ka AL lu-PO!"], ["Crepi il lupo!", "Thanks! (lit. &quot;may the wolf die!&quot;)", 5, "Fun Extras — Slang &amp; Real Italian", "KRE-pi IL lu-PO!"], ["Boh!", "Dunno! 🤷", 5, "Fun Extras — Slang &amp; Real Italian", "BO!"], ["Allora…", "So… (starts half of all Italian sentences)", 5, "Fun Extras — Slang &amp; Real Italian", "Al-lo-RA…"], ["Mamma mia!", "Oh my!", 5, "Fun Extras — Slang &amp; Real Italian", "MAM-ma MYA!"], ["Che casino!", "What a mess!", 5, "Fun Extras — Slang &amp; Real Italian", "KE ka-zi-NO!"], ["Weeks", "Focus", 5, "Fun Extras — Slang &amp; Real Italian", "VEEKS"]];
+const LS_KNOWN = "imi_known", LS_STAR = "imi_star";
+let known = new Set(JSON.parse(localStorage.getItem(LS_KNOWN) || "[]"));
+let starred = new Set(JSON.parse(localStorage.getItem(LS_STAR) || "[]"));
+const TIER_NAMES = {0:"All",1:"🟢 Survival",2:"🟡 Everyday",3:"🟠 Daily life",4:"🔴 Expression",5:"🟣 Advanced"};
+const save = () => { localStorage.setItem(LS_KNOWN, JSON.stringify([...known])); localStorage.setItem(LS_STAR, JSON.stringify([...starred])); updatePill(); };
+const updatePill = () => document.getElementById("known-count").textContent = known.size;
+
+// Tabs
+const tabs = {home:"view-home", flash:"view-flash", quiz:"view-quiz", dict:"view-dict", verbs:"view-verbs", basics:"view-basics", chat:"view-chat", stats:"view-stats"};
+function switchTab(key) {
+  document.querySelectorAll("nav button").forEach(x => x.classList.remove("active"));
+  const btn = document.getElementById("tab-" + key);
+  if (btn) btn.classList.add("active");
+  Object.values(tabs).forEach(id => document.getElementById(id).classList.add("hidden"));
+  document.getElementById(tabs[key]).classList.remove("hidden");
+  if (key === "stats") renderStats();
+}
+function goHome(){ switchTab("home"); }
+document.querySelectorAll(".home-card").forEach(c => c.onclick = () => switchTab(c.dataset.go));
+document.getElementById("home-btn").onclick = goHome;
+document.getElementById("stats-pill").onclick = () => switchTab("stats");
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => switchTab(b.id.replace("tab-","")));
+
+// Tier filter chips
+function buildChips(el, onChange) {
+  [0,1,2,3,4,5].forEach(t => {
+    const b = document.createElement("button");
+    b.textContent = TIER_NAMES[t]; b.dataset.tier = t;
+    if (t === 0) b.classList.add("active");
+    b.onclick = () => { el.querySelectorAll("button").forEach(x => x.classList.remove("active")); b.classList.add("active"); onChange(t); };
+    el.appendChild(b);
+  });
+}
+const tierFilter = t => t === 0 ? WORDS : WORDS.filter(w => w[2] === t);
+const shuffle = a => { for (let i = a.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+
+/* ===== PROGRESS DASHBOARD ===== */
+function renderStats() {
+  const total = WORDS.length;
+  const knownCount = WORDS.filter(w => known.has(w[0])).length;
+  const pct = total ? Math.round((knownCount / total) * 100) : 0;
+
+  document.getElementById("stats-known").textContent = knownCount;
+  document.getElementById("stats-total").textContent = total;
+  document.getElementById("stats-pct").textContent = pct + "%";
+  document.getElementById("stats-starred").textContent = starred.size;
+  document.getElementById("stats-overall-fill").style.width = pct + "%";
+
+  // By tier
+  const tierBox = document.getElementById("stats-tiers");
+  tierBox.innerHTML = "";
+  [1,2,3,4,5].forEach(t => {
+    const words = WORDS.filter(w => w[2] === t);
+    const k = words.filter(w => known.has(w[0])).length;
+    const p = words.length ? Math.round((k / words.length) * 100) : 0;
+    const row = document.createElement("div");
+    row.className = "stat-row";
+    row.innerHTML = `<div class="stat-row-top"><span class="name">${TIER_NAMES[t]}</span><span class="count">${k} / ${words.length}</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:${p}%"></div></div>`;
+    tierBox.appendChild(row);
+  });
+
+  // By category
+  const categories = [...new Set(WORDS.map(w => w[3]))];
+  let mastered = 0;
+  const catBox = document.getElementById("stats-categories");
+  catBox.innerHTML = "";
+  categories.forEach(cat => {
+    const words = WORDS.filter(w => w[3] === cat);
+    const k = words.filter(w => known.has(w[0])).length;
+    const p = words.length ? Math.round((k / words.length) * 100) : 0;
+    if (k === words.length && words.length > 0) mastered++;
+    const row = document.createElement("div");
+    row.className = "stat-row";
+    row.innerHTML = `<div class="stat-row-top"><span class="name">${cat}</span><span class="count">${k} / ${words.length}</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:${p}%"></div></div>`;
+    catBox.appendChild(row);
+  });
+  document.getElementById("stats-cat-count").textContent = categories.length;
+  document.getElementById("stats-mastered").textContent = mastered;
+}
+
+/* ===== TEXT-TO-SPEECH (Italian) ===== */
+let ttsVoices = [];
+function loadTTS(){ ttsVoices = window.speechSynthesis ? speechSynthesis.getVoices() : []; }
+if ("speechSynthesis" in window) { loadTTS(); speechSynthesis.onvoiceschanged = loadTTS; }
+function speak(text){
+  if (!("speechSynthesis" in window)) return;
+  const clean = text.replace(/\(.*?\)/g, "").replace(/[«»]/g, "").trim();
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(clean);
+  u.lang = "it-IT"; u.rate = 0.82;
+  const v = ttsVoices.find(v => v.lang && v.lang.toLowerCase().startsWith("it"));
+  if (v) u.voice = v;
+  speechSynthesis.speak(u);
+}
+
+/* ===== FLASHCARDS ===== */
+let deck = [], deckIdx = 0;
+function loadDeck(tier) {
+  deck = shuffle(tierFilter(tier).slice());
+  deckIdx = 0; showCard();
+}
+function showCard() {
+  const fc = document.getElementById("flashcard");
+  fc.classList.remove("flipped");
+  if (deckIdx >= deck.length) {
+    document.getElementById("deck-info").textContent = "🎉 Deck complete! Ricomincia?";
+    document.getElementById("fc-front").textContent = "Fine!";
+    document.getElementById("fc-back").textContent = "Restart ↻";
+    document.getElementById("fc-word").textContent = "";
+    document.getElementById("fc-cat").textContent = "";
+    document.getElementById("fc-rom").textContent = "";
+    document.getElementById("fc-rom2").textContent = "";
+    deckIdx = 0;
+    return;
+  }
+  const [it, en, t, cat, rom] = deck[deckIdx];
+  document.getElementById("fc-front").textContent = it;
+  document.getElementById("fc-word").textContent = it;
+  document.getElementById("fc-back").textContent = en;
+  document.getElementById("fc-cat").textContent = cat + " · " + TIER_NAMES[t];
+  document.getElementById("fc-cat2").textContent = cat;
+  document.getElementById("fc-rom").textContent = rom;
+  document.getElementById("fc-rom2").textContent = rom;
+  document.getElementById("deck-info").textContent = `Card ${deckIdx+1} of ${deck.length}`;
+}
+document.getElementById("flashcard").onclick = () => {
+  const fc = document.getElementById("flashcard");
+  fc.classList.toggle("flipped");
+  if (fc.classList.contains("flipped") && deck[deckIdx]) speak(deck[deckIdx][0]);
+};
+document.getElementById("fc-speak").onclick = e => { e.stopPropagation(); if (deck[deckIdx]) speak(deck[deckIdx][0]); };
+document.getElementById("know-btn").onclick = () => { known.add(deck[deckIdx][0]); save(); deckIdx++; showCard(); };
+document.getElementById("dont-btn").onclick = () => { deckIdx++; showCard(); };
+buildChips(document.getElementById("fc-tier"), loadDeck);
+loadDeck(0);
+
+/* ===== QUIZ ===== */
+let qPool = [], qScore = 0, qTotal = 0;
+function nextQuestion(tierOverride) {
+  if (!qPool.length) qPool = shuffle(tierFilter(quizTier).slice());
+  const [it, en, qt, qcat, rom] = qPool.pop();
+  document.getElementById("quiz-q").textContent = `“${it}”`;
+  document.getElementById("quiz-rom").textContent = rom;
+  const distractors = shuffle(WORDS.filter(w => w[1] !== en)).slice(0,3).map(w => w[1]);
+  const opts = shuffle([en, ...distractors]);
+  const box = document.getElementById("quiz-opts"); box.innerHTML = "";
+  opts.forEach(o => {
+    const b = document.createElement("button");
+    b.textContent = o;
+    b.onclick = () => {
+      qTotal++;
+      if (o === en) { qScore++; b.classList.add("correct"); }
+      else { b.classList.add("wrong"); known.delete(it); [...box.children].find(x => x.textContent === en).classList.add("correct"); }
+      save();
+      document.getElementById("quiz-score").textContent = `Score: ${qScore}/${qTotal}`;
+      setTimeout(nextQuestion, 900);
+    };
+    box.appendChild(b);
+  });
+}
+let quizTier = 0;
+buildChips(document.getElementById("quiz-tier"), t => { quizTier = t; qPool = []; qScore = 0; qTotal = 0; document.getElementById("quiz-score").textContent = ""; nextQuestion(); });
+document.getElementById("quiz-score").textContent = "";
+nextQuestion();
+
+/* ===== DICTIONARY ===== */
+let dictTier = 0;
+function renderDict() {
+  const q = document.getElementById("search").value.trim().toLowerCase();
+  let list = tierFilter(dictTier).filter(([it,en]) => !q || it.toLowerCase().includes(q) || en.toLowerCase().includes(q));
+  document.getElementById("dict-count").textContent = `${list.length} words`;
+  const box = document.getElementById("dict-list"); box.innerHTML = "";
+  list.forEach(([it,en,t,cat,rom]) => {
+    const row = document.createElement("div"); row.className = "dict-row";
+    row.innerHTML = `<span><span class="star ${starred.has(it)?'on':''}">★</span><span class="it">${it}</span><span class="dict-speak">🔊</span><span class="tier-badge t${t}">${t}</span><div class="rom-small">${rom}</div></span><span class="en">${en}</span>`;
+    row.querySelector(".dict-speak").onclick = e => { e.stopPropagation(); speak(it); };
+    row.querySelector(".star").onclick = e => { e.stopPropagation();
+      starred.has(it) ? starred.delete(it) : starred.add(it); save(); renderDict(); };
+    box.appendChild(row);
+  });
+}
+buildChips(document.getElementById("dict-tier"), t => { dictTier = t; renderDict(); });
+document.getElementById("search").oninput = renderDict;
+renderDict();
+
+/* ===== VERBS: conjugation drill + reference ===== */
+const PERSONS = ["io","tu","lui/lei","noi","voi","loro"];
+const CONJ = [
+ {inf:"essere", en:"to be", g:"key", forms:["sono","sei","\u00e8","siamo","siete","sono"]},
+ {inf:"avere", en:"to have", g:"key", forms:["ho","hai","ha","abbiamo","avete","hanno"]},
+ {inf:"andare", en:"to go", g:"irr", forms:["vado","vai","va","andiamo","andate","vanno"]},
+ {inf:"fare", en:"to do/make", g:"irr", forms:["faccio","fai","fa","facciamo","fate","fanno"]},
+ {inf:"dire", en:"to say", g:"irr", forms:["dico","dici","dice","diciamo","dite","dicono"]},
+ {inf:"venire", en:"to come", g:"irr", forms:["vengo","vieni","viene","veniamo","venite","vengono"]},
+ {inf:"volere", en:"to want", g:"irr", forms:["voglio","vuoi","vuole","vogliamo","volete","vogliono"]},
+ {inf:"potere", en:"can", g:"irr", forms:["posso","puoi","pu\u00f2","possiamo","potete","possono"]},
+ {inf:"dovere", en:"must", g:"irr", forms:["devo","devi","deve","dobbiamo","dovete","devono"]},
+ {inf:"bere", en:"to drink", g:"irr", forms:["bevo","bevi","beve","beviamo","bevete","bevono"]},
+ {inf:"parlare", en:"to speak", g:"are", forms:["parlo","parli","parla","parliamo","parlate","parlano"]},
+ {inf:"mangiare", en:"to eat", g:"are", forms:["mangio","mangi","mangia","mangiamo","mangiate","mangiano"]},
+ {inf:"lavorare", en:"to work", g:"are", forms:["lavoro","lavori","lavora","lavoriamo","lavorate","lavorano"]},
+ {inf:"ascoltare", en:"to listen", g:"are", forms:["ascolto","ascolti","ascolta","ascoltiamo","ascoltate","ascoltano"]},
+ {inf:"vedere", en:"to see", g:"ere", forms:["vedo","vedi","vede","vediamo","vedete","vedono"]},
+ {inf:"prendere", en:"to take", g:"ere", forms:["prendo","prendi","prende","prendiamo","prendete","prendono"]},
+ {inf:"scrivere", en:"to write", g:"ere", forms:["scrivo","scrivi","scrive","scriviamo","scrivete","scrivono"]},
+ {inf:"leggere", en:"to read", g:"ere", forms:["leggo","leggi","legge","leggiamo","leggete","leggono"]},
+ {inf:"dormire", en:"to sleep", g:"ire", forms:["dormo","dormi","dorme","dormiamo","dormite","dormono"]},
+ {inf:"partire", en:"to leave", g:"ire", forms:["parto","parti","parte","partiamo","partite","partono"]},
+ {inf:"finire", en:"to finish", g:"ire", forms:["finisco","finisci","finisce","finiamo","finite","finiscono"]},
+ {inf:"capire", en:"to understand", g:"ire", forms:["capisco","capisci","capisce","capiamo","capite","capiscono"]}
+];
+const VERB_GROUPS = {all:"All", key:"⭐ Essere/Avere", irr:"Irregular", are:"-are", ere:"-ere", ire:"-ire"};
+let verbGroup = "all", vScore = 0, vTotal = 0;
+
+function nextDrill() {
+  const pool = CONJ.filter(v => verbGroup === "all" || v.g === verbGroup);
+  const v = pool[Math.floor(Math.random()*pool.length)];
+  const pi = Math.floor(Math.random()*6);
+  const answer = v.forms[pi];
+  document.getElementById("drill-q").textContent = PERSONS[pi] + "  ·  " + v.inf;
+  document.getElementById("drill-sub").textContent = v.en;
+  const distract = new Set();
+  while (distract.size < 3) {
+    const dv = CONJ[Math.floor(Math.random()*CONJ.length)];
+    const df = dv.forms[Math.floor(Math.random()*6)];
+    if (df !== answer) distract.add(df);
+  }
+  const opts = shuffle([answer, ...distract]);
+  const box = document.getElementById("drill-opts"); box.innerHTML = "";
+  opts.forEach(o => {
+    const b = document.createElement("button");
+    b.textContent = o;
+    b.onclick = () => {
+      vTotal++;
+      if (o === answer) { vScore++; b.classList.add("correct"); }
+      else { b.classList.add("wrong"); [...box.children].find(x => x.textContent === answer).classList.add("correct"); }
+      document.getElementById("verb-score").textContent = `Score: ${vScore}/${vTotal}`;
+      setTimeout(nextDrill, 850);
+    };
+    box.appendChild(b);
+  });
+}
+const vt = document.getElementById("verb-tier");
+Object.entries(VERB_GROUPS).forEach(([k,label]) => {
+  const b = document.createElement("button");
+  b.textContent = label; b.dataset.g = k;
+  if (k === "all") b.classList.add("active");
+  b.onclick = () => { vt.querySelectorAll("button").forEach(x => x.classList.remove("active")); b.classList.add("active"); verbGroup = k; nextDrill(); };
+  vt.appendChild(b);
+});
+
+// reference tables
+const GROUP_ORDER = ["key","irr","are","ere","ire"];
+const GROUP_LABEL = {key:"⭐ Essere & Avere (memorize first!)", irr:"Common irregulars", are:"Regular -are verbs", ere:"Regular -ere verbs", ire:"Regular -ire verbs"};
+const vtBox = document.getElementById("verb-tables");
+GROUP_ORDER.forEach(g => {
+  const d = document.createElement("details");
+  if (g === "key") d.open = true;
+  const verbs = CONJ.filter(v => v.g === g);
+  let rows = verbs.map(v =>
+    `<tr><td colspan="2" style="color:var(--text);font-weight:700;padding-top:12px;">${v.inf} <span style="color:var(--dim);font-weight:400;">— ${v.en}</span></td></tr>` +
+    PERSONS.map((p,i) => `<tr><td>${p}</td><td>${v.forms[i]}</td></tr>`).join("")
+  ).join("");
+  d.innerHTML = `<summary>${GROUP_LABEL[g]}</summary><table class="conj-table">${rows}</table>`;
+  vtBox.appendChild(d);
+});
+nextDrill();
+
+
+/* ===== BASICS: alphabet, numbers, animals ===== */
+const ALPHABET = [["A", "a", "A"], ["B", "bi", "BI"], ["C", "ci", "CHI"], ["D", "di", "DI"], ["E", "e", "E"], ["F", "effe", "EF-fe"], ["G", "gi", "JI"], ["H", "acca", "AK-ka"], ["I", "i", "I"], ["L", "elle", "EL-le"], ["M", "emme", "EM-me"], ["N", "enne", "EN-ne"], ["O", "o", "O"], ["P", "pi", "PI"], ["Q", "cu", "KU"], ["R", "erre", "ER-re"], ["S", "esse", "ES-se"], ["T", "ti", "TI"], ["U", "u", "U"], ["V", "vu", "VU"], ["Z", "zeta", "TSE-ta"]];
+const NUMBERS = [["0", "zero", "DZE-ro"], ["1", "uno", "U-no"], ["2", "due", "DWE"], ["3", "tre", "TRE"], ["4", "quattro", "KWAT-tro"], ["5", "cinque", "CHIN-kwe"], ["6", "sei", "SEI"], ["7", "sette", "SET-te"], ["8", "otto", "OT-to"], ["9", "nove", "NO-ve"], ["10", "dieci", "DYE-chi"], ["11", "undici", "un-DI-chi"], ["12", "dodici", "do-DI-chi"], ["13", "tredici", "tre-DI-chi"], ["14", "quattordici", "kwat-tor-DI-chi"], ["15", "quindici", "kwin-DI-chi"], ["16", "sedici", "se-DI-chi"], ["17", "diciassette", "di-chas-SET-te"], ["18", "diciotto", "di-CHOT-to"], ["19", "diciannove", "di-chan-NO-ve"], ["20", "venti", "VEN-ti"], ["21", "ventuno", "ven-TU-no"], ["30", "trenta", "TREN-ta"], ["40", "quaranta", "kwa-RAN-ta"], ["50", "cinquanta", "chin-KWAN-ta"], ["60", "sessanta", "ses-SAN-ta"], ["70", "settanta", "set-TAN-ta"], ["80", "ottanta", "ot-TAN-ta"], ["90", "novanta", "no-VAN-ta"], ["100", "cento", "CHEN-to"], ["101", "centouno", "chen-TOU-no"], ["200", "duecento", "dwe-CHEN-to"], ["1.000", "mille", "MIL-le"], ["2.000", "duemila", "dwe-MI-la"], ["1.000.000", "un milione", "UN mi-LYO-ne"], ["1°", "primo/a", "pri-MO/-a"], ["2°", "secondo/a", "se-kon-DO/-a"], ["3°", "terzo/a", "ter-TSO/-a"], ["last", "ultimo/a", "ul-ti-MO/-a"], ["½", "metà", "me-TÀ"]];
+const BASIC_SECTIONS = {alpha:["basic-alphabet","🔤 Alfabeto"], nums:["basic-numbers","🔢 Numeri"], anim:["basic-animals","🐾 Animali"]};
+let basicCur = "alpha";
+const bt = document.getElementById("basic-tier");
+Object.entries(BASIC_SECTIONS).forEach(([k, v]) => {
+  const b = document.createElement("button");
+  b.textContent = v[1]; b.dataset.k = k;
+  if (k === "alpha") b.classList.add("active");
+  b.onclick = () => {
+    bt.querySelectorAll("button").forEach(x => x.classList.remove("active"));
+    b.classList.add("active"); basicCur = k;
+    Object.values(BASIC_SECTIONS).forEach(s => document.getElementById(s[0]).classList.add("hidden"));
+    document.getElementById(BASIC_SECTIONS[k][0]).classList.remove("hidden");
+  };
+  bt.appendChild(b);
+});
+// alphabet grid
+const ag = document.getElementById("alpha-grid");
+ALPHABET.forEach(([L, name, rom]) => {
+  const d = document.createElement("div");
+  d.className = "basic-card";
+  d.innerHTML = `<div class="ch">${L}</div><div class="sm">${rom}</div>`;
+  d.onclick = () => speak(name);
+  ag.appendChild(d);
+});
+// number rows
+const nl = document.getElementById("num-list");
+NUMBERS.forEach(([dig, w, rom]) => {
+  const d = document.createElement("div");
+  d.className = "num-row";
+  d.innerHTML = `<span class="dig">${dig}</span><span><span class="wd">${w}</span><br><span class="rm">${rom}</span></span><span class="spk">🔊</span>`;
+  d.querySelector(".spk").onclick = e => { e.stopPropagation(); speak(w); };
+  nl.appendChild(d);
+});
+// animal rows
+const al = document.getElementById("anim-list");
+WORDS.filter(w => w[3] === "Animals").forEach(([it, en, t, cat, rom]) => {
+  const d = document.createElement("div");
+  d.className = "num-row";
+  d.innerHTML = `<span><span class="wd">${it}</span> <span class="rm">${rom}</span></span><span class="en" style="color:var(--dim);font-size:.85rem">${en}</span><span class="spk">🔊</span>`;
+  d.querySelector(".spk").onclick = e => { e.stopPropagation(); speak(it); };
+  al.appendChild(d);
+});
+
+
+/* ===== CHAT: Sofia, the offline Italian texting partner ===== */
+const EXTRAS = [["tutto", "all/everything", "TUT-to"], ["tutta", "all (f)", "TUT-ta"], ["male", "bad(ly)", "MA-le"], ["dai", "come on!", "DAI"], ["certo", "sure!", "CHER-to"], ["ecco", "here you go", "EK-ko"], ["davvero", "really?", "dav-VE-ro"], ["ehi", "hey", "EI"], ["ah", "ah", "A"], ["peccato", "too bad", "pek-KA-to"], ["magari", "I wish!", "ma-GA-ri"], ["volentieri", "gladly", "vo-len-TYE-ri"], ["guarda", "look/listen", "GWAR-da"], ["senti", "listen/hey", "SEN-ti"], ["tipo", "like (slang)", "TI-po"], ["boh", "dunno 🤷", "BO"], ["va", "okay/goes", "VA"], ["bello", "nice/beautiful", "BEL-lo"], ["brava", "good job (f)", "BRA-va"], ["bravo", "good job", "BRA-vo"], ["fammi", "let me", "FAM-mi"], ["dimmi", "tell me", "DIM-mi"], ["capito", "understood", "ka-PI-to"], ["vero", "right?", "VE-ro"], ["è", "is", "È"], ["sono", "I am/they are", "SO-no"], ["sei", "you are", "SEI"], ["ho", "I have", "O"], ["hai", "you have", "AI"], ["ha", "he/she has", "A"], ["vuoi", "you want", "VWOI"], ["voglio", "I want", "VO-lyo"], ["vado", "I go", "VA-do"], ["faccio", "I do/make", "FAK-cho"], ["fai", "you do/make", "FAI"], ["parli", "you speak", "PAR-li"], ["parlo", "I speak", "PAR-lo"], ["piacere", "nice to meet you", "pya-CHE-re"], ["conoscerti", "to meet you", "ko-no-SHER-ti"], ["quale", "which", "KWA-le"], ["qual", "which", "KWAL"], ["più", "more", "pYù"], ["meno", "less", "ME-no"], ["solo", "only", "SO-lo"], ["proprio", "really/just", "PRO-pryo"], ["sicuro", "sure", "si-KU-ro"], ["ahah", "haha", "AA"], ["figata", "awesome!", "fi-GA-ta"], ["che", "what/how", "KE"], ["chi", "who", "KI"], ["mia", "my (f)", "MYA"], ["mio", "my (m)", "MYO"], ["tuo", "your (m)", "TWO"], ["tua", "your (f)", "TWA"], ["nostro", "our", "NOS-tro"], ["beh", "well", "BE"], ["eh", "eh/yeah", "E"], ["ok", "ok", "OK"], ["margherita", "margherita pizza", "mar-ge-RI-ta"], ["pasticceria", "pastry shop", "pa-stik-CHE-rya"], ["gelateria", "ice-cream shop", "je-la-TE-rya"], ["aperitivo", "aperitif/drinks", "a-pe-ri-TI-vo"], ["riposo", "rest", "ri-PO-zo"], ["weekend", "weekend", "vee-KEND"], ["calcio", "soccer", "KAL-cho"], ["musica", "music", "mu-ZI-ka"], ["film", "movie", "FILM"], ["serie", "TV series", "SE-rye"], ["cucina", "kitchen/cuisine", "ku-CHI-na"], ["adesso", "now", "a-DES-so"], ["metti", "put!", "MET-ti"], ["straniero", "foreigner", "stra-NYE-ro"], ["inglese", "English", "in-GLE-ze"], ["italia", "Italy", "i-TA-lya"], ["roma", "Rome", "RO-ma"], ["napoli", "Naples", "na-PO-li"], ["milano", "Milan", "mi-LA-no"], ["firenze", "Florence", "fi-REN-tse"], ["venezia", "Venice", "ve-NE-dzya"], ["sicilia", "Sicily", "si-CHI-lya"], ["toscana", "Tuscany", "to-SKA-na"], ["americana", "American (f)", "a-me-ri-KA-na"], ["americano", "American (m)", "a-me-ri-KA-no"], ["studente", "student (m)", "stu-DEN-te"], ["studentessa", "student (f)", "stu-den-TES-sa"], ["stati", "been (pl)", "STA-ti"], ["stata", "been (f)", "STA-ta"], ["quanto", "how much/long", "KWAN-to"], ["volta", "time/turn", "VOL-ta"], ["giornata", "day", "jor-NA-ta"], ["serata", "evening out", "se-RA-ta"], ["uscita", "outing", "u-SHI-ta"], ["facendo", "doing", "fa-CHEN-do"], ["vediamo", "let's see", "ve-DYA-mo"], ["parliamo", "let's talk", "par-LYA-mo"], ["facciamo", "let's do", "fak-CHA-mo"], ["aspetta", "wait", "a-SPET-ta"], ["pronto", "ready", "PRON-to"], ["subito", "right away", "su-BI-to"], ["forse", "maybe", "FOR-se"], ["appena", "just", "ap-PE-na"], ["quasi", "almost", "KWA-zi"], ["pochino", "a tiny bit", "po-KI-no"], ["tantissimo", "a whole lot", "tan-tis-SI-mo"], ["carino", "cute/nice", "ka-RI-no"], ["carina", "cute (f)", "ka-RI-na"], ["simpatica", "nice (f)", "sim-pa-TI-ka"], ["gentile", "kind", "jen-TI-le"], ["fantastica", "fantastic (f)", "fan-ta-STI-ka"], ["fantastico", "fantastic", "fan-ta-STI-ko"], ["ottima", "great (f)", "ot-TI-ma"], ["ottimo", "great", "ot-TI-mo"], ["buonissima", "really good (f)", "bwo-nis-SI-ma"], ["buonissimo", "really good", "bwo-nis-SI-mo"], ["fame", "hunger", "FA-me"], ["sete", "thirst", "SE-te"], ["sonno", "sleepiness", "SON-no"], ["addormentata", "fallen asleep (f)", "ad-dor-men-TA-ta"], ["svegliata", "woke up (f)", "sve-LYA-ta"], ["alzata", "got up (f)", "al-TSA-ta"], ["vestita", "dressed (f)", "ve-STI-ta"], ["mangiato", "eaten", "man-JA-to"], ["bevuto", "drunk", "be-VU-to"], ["fatto", "done", "FAT-to"], ["andata", "gone (f)", "an-DA-ta"], ["visto", "seen", "VI-sto"], ["detto", "said", "DET-to"], ["perso", "lost", "PER-so"], ["trovato", "found", "tro-VA-to"], ["comprato", "bought", "kom-PRA-to"], ["pagato", "paid", "pa-GA-to"], ["arrivata", "arrived (f)", "ar-ri-VA-ta"], ["partita", "match/departed (f)", "par-TI-ta"], ["tornata", "returned (f)", "tor-NA-ta"], ["rimasta", "stayed (f)", "ri-MA-sta"], ["portato", "brought", "por-TA-to"], ["sentito", "felt/heard", "sen-TI-to"], ["provato", "tried", "pro-VA-to"], ["piaciuto", "pleased/liked (m)", "pya-chu-to"], ["com'è", "how is", "kom'-È"], ["quindi", "so/therefore", "kwin-di"], ["però", "but/however", "pe-RÒ"], ["dunque", "so then", "DUN-kwe"], ["poi", "then/later", "POI"], ["sempre", "always", "SEM-pre"], ["spesso", "often", "SPES-so"], ["qualche", "some", "KWAL-ke"], ["tanti", "many", "TAN-ti"], ["tante", "many (f)", "TAN-te"], ["ogni", "every", "O-nyi"], ["nessuno", "no one", "nes-SU-no"], ["qualcuno", "someone", "kwal-KU-no"], ["lei", "she/you (formal)", "LEI"], ["lui", "he", "lWi"], ["salve", "hello (formal)", "SAL-ve"], ["signorina", "miss", "si-nyo-RI-na"], ["signora", "madam", "si-NYO-ra"], ["divertente", "fun", "di-ver-TEN-te"], ["noioso", "boring", "NOYO-zo"], ["pazzesco", "crazy/amazing", "pat-TSE-sko"], ["pazzesca", "crazy (f)", "pat-TSE-ska"], ["incredibile", "incredible", "in-kre-di-BI-le"], ["normale", "normal", "nor-MA-le"], ["speciale", "special", "spe-CHA-le"], ["romantico", "romantic", "ro-man-TI-ko"], ["buffo", "funny", "BUF-fo"], ["buffa", "funny (f)", "BUF-fa"], ["scherzo", "joke", "SKER-tso"], ["sul serio", "seriously", "SUL SE-ryo"], ["davanti", "in front", "da-VAN-ti"], ["indietro", "back", "in-DYE-tro"], ["sopra", "above", "SO-pra"], ["qualunque", "any", "kwa-LUN-kwe"], ["addirittura", "even/really", "ad-di-rit-TU-ra"], ["mica", "not really (slang)", "MI-ka"], ["mannaggia", "darn it!", "man-NAG-ja"], ["madonna", "wow/gosh!", "ma-DON-na"], ["cheers", "cheers", "KEERS"], ["ciao ciao", "bye bye", "CHAO CHAO"], ["allora", "so/well", "al-LO-ra"], ["ancora", "still/again", "an-KO-ra"], ["troppo", "too much", "TROP-po"], ["dai dai", "c'mon c'mon", "DAI DAI"], ["come stai", "how are you", "KO-me STAI"], ["tutto bene", "all good", "TUT-to BE-ne"], ["tutto apposto", "all good (slang)", "TUT-to ap-PO-sto"], ["che fai", "what are you doing", "KE FAI"], ["sto bene", "I'm good", "STO BE-ne"], ["non c'è male", "not bad", "NON K'È MA-le"], ["piacere mio", "my pleasure", "pya-CHE-re MYO"], ["di dove sei", "where are you from", "DI DO-ve SEI"], ["sono di", "I'm from", "SO-no DI"], ["abito a", "I live in", "a-BI-to A"], ["vivo a", "I live in", "VI-vo A"], ["quanti anni hai", "how old are you", "KWAN-ti AN-ni AI"], ["ho 25 anni", "I'm 25", "O 25 AN-ni"], ["va benissimo", "great!", "VA be-nis-SI-mo"], ["va bene così", "it's fine like this", "VA BE-ne ko-ZÌ"], ["non lo so", "I don't know", "NON LO SO"], ["lo so", "I know", "LO SO"], ["che bello", "how nice", "KE BEL-lo"], ["che buono", "how tasty", "KE BWO-no"], ["mi manchi", "I miss you", "MI MAN-ki"], ["ti va", "you feel like", "TI VA"], ["ci sto", "I'm in", "CHI STO"], ["sono d'accordo", "I agree", "SO-no d'ak-KOR-do"], ["hai ragione", "you're right", "AI ra-JO-ne"], ["figo", "cool (slang)", "FI-go"], ["fichi", "cool (pl slang)", "FI-ki"], ["che palle", "what a drag (slang)", "KE PAL-le"], ["vabbè", "oh well (slang)", "vab-BÈ"], ["basta così", "that's enough", "BA-sta ko-ZÌ"], ["dai su", "come on now", "DAI SU"], ["ma dai", "oh come on", "MA DAI"], ["che dici", "what do you say", "KE DI-chi"], ["dico sul serio", "I'm serious", "DI-ko SUL SE-ryo"], ["dico", "I say", "DI-ko"], ["proprio così", "exactly", "PRO-pryo ko-ZÌ"], ["esatto", "exactly", "e-ZAT-to"], ["perfetto", "perfect", "per-FET-to"], ["benissimo", "very well", "be-nis-SI-mo"], ["purtroppo", "unfortunately", "pur-TROP-po"], ["mi piaci", "I like you", "MI PYA-chi"], ["sei carina", "you're cute", "SEI ka-RI-na"], ["grazie mille", "thanks a lot", "GRA-dzye MIL-le"], ["prego", "you're welcome", "PRE-go"], ["di nulla", "no problem", "DI NUL-la"], ["scusa tanto", "so sorry", "SKU-za TAN-to"], ["non importa", "it's ok", "NON im-POR-ta"], ["fa niente", "no worries", "FA NYEN-te"], ["tranquilla", "no worries (f)", "tran-kwil-la"], ["tranquillo", "no worries (m)", "tran-kwil-lo"], ["coraggio", "courage/you can do it", "ko-RAG-jo"]];
+const WORDMAP = {}, ROMMAP = {};
+function indexWord(k, en, rom){
+  k = k.trim().toLowerCase();
+  if (k && !k.includes(" ") && !WORDMAP[k]) { WORDMAP[k] = en; ROMMAP[k] = rom; }
+}
+WORDS.forEach(w => w[0].replace(/\(.*?\)/g, "").split(/\s*\/\s*|\s*·\s*/).forEach(p => indexWord(p, w[1], w[4])));
+EXTRAS.forEach(e => { indexWord(e[0], e[1], e[2]); e[0].split(" ").forEach(p => indexWord(p, e[1], e[2])); });
+
+function cleanTok(t){ return t.toLowerCase().replace(/^[^a-zàèéìòù'’]+|[^a-zàèéìòù'’]+$/g, ""); }
+function lookup(w){
+  if (WORDMAP[w]) return [WORDMAP[w], ROMMAP[w]];
+  if (w.endsWith("i")) {
+    if (WORDMAP[w.slice(0,-1)+"o"]) return [WORDMAP[w.slice(0,-1)+"o"], ROMMAP[w.slice(0,-1)+"o"]];
+    if (WORDMAP[w.slice(0,-1)+"e"]) return [WORDMAP[w.slice(0,-1)+"e"], ROMMAP[w.slice(0,-1)+"e"]];
+  }
+  if (w.endsWith("e") && WORDMAP[w.slice(0,-1)+"o"]) return [WORDMAP[w.slice(0,-1)+"o"], ROMMAP[w.slice(0,-1)+"o"]];
+  if (w.endsWith("a") && WORDMAP[w.slice(0,-1)+"o"]) return [WORDMAP[w.slice(0,-1)+"o"], ROMMAP[w.slice(0,-1)+"o"]];
+  return [null, null];
+}
+function translateBox(text){
+  const parts = text.split(/\s+/).map(tok => {
+    const c = cleanTok(tok);
+    if (!c) return "";
+    const found = lookup(c);
+    const label = found[0] ? (found[0] + (found[1] ? " · " + found[1] : "")) : (found[1] || "?");
+    return `<span class="tw" data-say="${c}"><b>${tok}</b></span> <span class="m">${label}</span>`;
+  }).filter(Boolean);
+  return `<div class="trans-box"><span class="tw" data-say="__ALL__" style="border-bottom:none">🔊</span> ${parts.join(" ")}</div>`;
+}
+function addMsg(who, text){
+  const box = document.getElementById("chat-box");
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "display:flex;flex-direction:column;align-items:" + (who === "user" ? "flex-end" : "flex-start");
+  const b = document.createElement("div");
+  b.className = "msg " + who;
+  b.textContent = text;
+  b.onclick = () => {
+    let t = wrap.querySelector(".trans-box");
+    if (t) { t.remove(); return; }
+    const div = document.createElement("div");
+    div.innerHTML = translateBox(text);
+    wrap.appendChild(div);
+    div.querySelectorAll(".tw").forEach(s => s.onclick = ev => {
+      ev.stopPropagation();
+      speak(s.dataset.say === "__ALL__" ? text : s.dataset.say);
+    });
+    box.scrollTop = box.scrollHeight;
+  };
+  wrap.appendChild(b);
+  box.appendChild(wrap);
+  box.scrollTop = box.scrollHeight;
+}
+const pick = a => a[Math.floor(Math.random() * a.length)];
+let userName = null, askedAge = false, chatStarted = false;
+const FALLBACKS = [
+  "Boh, non ho capito 😅 Scrivi in italiano! Tocca un messaggio per vedere la traduzione.",
+  "Scusa? 🤔 Puoi ripetere? Magari con parole più semplici...",
+  "Interessante! 👀 Dimmi di più!",
+  "Ah sì? E poi? Raccontami tutto!"
+];
+const INTENTS = [
+  {k:["ciao","salve","buongiorno","buonasera","ehi ","hei","hey"], r:["Ciao! Come stai? 😊","Ehi! Che bello sentirti! Tutto bene?","Ciao ciao! Dai, parliamo! Dimmi tutto!"]},
+  {k:["come stai","come va","come te la passi","tutto bene?"], r:["Tutto bene, grazie! E tu? 😊","Benissimo! Oggi ho già bevuto due caffè ☕ Tu come stai?"]},
+  {k:["sto bene","benissimo","bene grazie","tutto apposto","tutto ok","non c'è male"], r:["Ottimo! Allora, di cosa hai voglia di parlare? Cibo? Viaggi? 😄","Che bello! Dimmi, cosa fai di bello nella vita?"]},
+  {k:["sto male","mi sento male","non sto bene","triste","sono stanco","sono stanca","ansia"], r:["Aww mi dispiace 😔 Coraggio! Riposa un po'. Vuoi parlarmene?"]},
+  {k:["sono di","vengo da","vivo a","abito a"], r:["Che figata! Io vivo a Roma 🇮🇹 Mi piace un sacco. E a te piace il cibo italiano?"]},
+  {k:["cibo","pizza","pasta","gelato","carne","formaggio","pane","risotto","fame","mangiare","cucina","colazione","margherita"], r:["Ah, il cibo! 🍕 Io adoro la pizza margherita, è la migliore. E tu? Qual è il tuo piatto preferito?","La cucina italiana è la migliore del mondo, diciamocelo 😋 Cosa ti piace mangiare?"]},
+  {k:["bere","caffè","cappuccino","vino","birra","succo"], r:["Io faccio sempre colazione con un cappuccino ☕ Tu cosa bevi di solito?"]},
+  {k:["famiglia","mamma","papà","madre","padre","sorella","fratello","nonna","nonno","figli"], r:["La famiglia è tutto! 👨‍👩‍👧 Io ho una sorella. E tu? Hai fratelli o sorelle?"]},
+  {k:["lavoro","lavorare","scuola","università","studio","studente","studentessa","lezione","esame"], r:["Interessante! 📚 Io studio le lingue. E tu cosa studi? Che lavoro fai?"]},
+  {k:["viaggio","viaggi","viaggiare","vacanza","vacanze","aereo","treno","mare","montagna","spiaggia"], r:["Adoro viaggiare! ✈️ L'anno scorso sono stata a Napoli: che città! Tu dove sei stata di bello?"]},
+  {k:["tempo fa","piove","c'è il sole","fa caldo","fa freddo","nevic","estate","inverno","primavera","autunno"], r:["Oggi qui a Roma c'è un sole bellissimo ☀️ Che tempo fa da te?"]},
+  {k:["quanti anni"], r:["Ho 25 anni, e tu? 😊"], age:true},
+  {k:["grazie"], r:["Prego! ❤️","Di niente! Ehilà, ci siamo capiti 😎"]},
+  {k:["arrivederci","ciao ciao","devo andare","a dopo","ci vediamo","buonanotte","vado a dormire"], r:["Ciao ciao! 👋 A presto, spero!","Ci vediamo! Buona giornata ☀️ E torna presto a trovarmi!"]},
+  {k:["sei simpatica","sei brava","mi piaci","sei carina","sei carino"], r:["Ahah grazie, sei troppo gentile! 😊 Anche tu sei in gamba!"]},
+  {k:["slang","parolacce","volgare"], r:["Ok, lezione di slang 😎 «Dai!» = come on! · «Boh!» = I dunno · «Che figata!» = how cool! · «Magari!» = I wish! · «Tipo» = like · «Vabbè» = oh well. Prova a usarne uno!"]},
+  {k:["e tu","tu cosa","e tu invece","tu invece"], r:["Io? Studio, leggo e bevo troppo caffè 😅 E sogno la Sicilia. E tu?"]},
+  {k:["the "," and "," you "," hello ","my name"], r:["Scusa! Io parlo solo italiano 😅 Scrivimi in italiano, va bene? Tocca i miei messaggi per la traduzione!"]}
+];
+function showTyping(on){
+  const box = document.getElementById("chat-box");
+  let t = document.getElementById("typing-ind");
+  if (on && !t) {
+    t = document.createElement("div");
+    t.id = "typing-ind"; t.className = "typing";
+    t.textContent = "Sofia sta scrivendo…";
+    box.appendChild(t); box.scrollTop = box.scrollHeight;
+  } else if (!on && t) t.remove();
+}
+function botReply(text){
+  showTyping(true);
+  setTimeout(() => {
+    showTyping(false);
+    const lower = " " + text.toLowerCase() + " ";
+    let reply = null, m;
+    if ((m = lower.match(/mi chiamo ([a-zàèéìòù'’]+)/)) || (m = lower.match(/nome è ([a-zàèéìòù'’]+)/)) || (m = lower.trim().match(/^sono ([a-zàèéìòù'’]{2,})$/))) {
+      userName = m[1].charAt(0).toUpperCase() + m[1].slice(1);
+      reply = pick(["Piacere di conoscerti, " + userName + "! 😊 Io sono Sofia. Dimmi, di dove sei?", userName + "! Che bel nome ❤️ Allora " + userName + ", raccontami: cosa ti piace fare?"]);
+    } else if (askedAge && /^\d{1,3}$/.test(text.trim())) {
+      reply = "Wow, " + text.trim() + " anni! È un'età bellissima 😊 E cosa fai nella vita?";
+      askedAge = false;
+    } else if ((m = lower.match(/mi piace(?:\s+(?:il|la|le|lo|l'|i|gli))?\s+(.+)/))) {
+      const x = m[1].replace(/[.!?]+$/g, "").trim().slice(0, 40);
+      reply = pick(["Ah, ti piace " + x + "! Che figata 😎 Da quanto tempo?", "Bello! A me piace tantissimo anche quello 😄 Raccontami di più!"]);
+    } else {
+      for (const it of INTENTS) {
+        if (it.k.some(k => lower.includes(k))) { reply = pick(it.r); if (it.age) askedAge = true; break; }
+      }
+      if (!reply) reply = pick(FALLBACKS);
+    }
+    addMsg("bot", reply.replace("{name}", userName || "amico"));
+  }, 650 + Math.random() * 750);
+}
+function sendChat(text){
+  text = (text || document.getElementById("chat-input").value).trim();
+  if (!text) return;
+  addMsg("user", text);
+  document.getElementById("chat-input").value = "";
+  botReply(text);
+}
+document.getElementById("chat-send").onclick = () => sendChat();
+document.getElementById("chat-input").addEventListener("keydown", e => { if (e.key === "Enter") sendChat(); });
+const CHAT_CHIPS = [["🍕 Parliamo di cibo","cibo"],["👨‍👩‍👧 Famiglia","famiglia"],["✈️ Viaggi","viaggi"],["☀️ Che tempo fa?","che tempo fa?"],["🎸 La mia hobby","mi piace la musica"],["😎 Impara lo slang","slang"],["🍦 Gelato!","gelato"]];
+const chipsBox = document.getElementById("chat-chips");
+CHAT_CHIPS.forEach(([label, msg]) => {
+  const b = document.createElement("button");
+  b.textContent = label;
+  b.onclick = () => sendChat(msg);
+  chipsBox.appendChild(b);
+});
+document.getElementById("tab-chat").addEventListener("click", () => {
+  if (chatStarted) return;
+  chatStarted = true;
+  setTimeout(() => addMsg("bot", "Ciao! Sono Sofia 😊 Scrivimi in italiano — dai, pure con lo slang! Tocca un messaggio per la traduzione parola per parola. Come stai?"), 400);
+});
+
+updatePill();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
